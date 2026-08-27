@@ -6,8 +6,8 @@ A mobile-first social reading and book-club app: splash, auth, onboarding, and f
 
 Carried directly from the selected direction:
 
-- Paper `#FAFAFA`, ink `#1C1917`, burgundy `#5D2A2A` (primary accent), forest `#2D4F3C` (progress), parchment `#F5F2EA` (surfaces)
-- Playfair Display for book titles and editorial voice; Public Sans for all UI
+- Paper `#FAFAFA`, ink `#1C1917`, primary `#00D084`, secondary `#E83227`, forest `#2D4F3C` (progress), parchment `#F5F2EA` (surfaces)
+- Outfit for headings; Manrope for body text and UI labels
 - Moderate radii (rounded-md covers, rounded-xl/2xl surfaces), hairline `ink/5` borders, generous vertical rhythm
 - Phone-width column centered with safe-area padding; tablets get the same column with wider gutters
 - Uppercase micro-labels ("Active Circle", "The Common Room") as section headers
