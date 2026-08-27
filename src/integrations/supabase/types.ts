@@ -14,7 +14,246 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      books: {
+        Row: {
+          author: string
+          cover_url: string | null
+          created_at: string
+          genre: string | null
+          id: string
+          pages: number | null
+          published_year: number | null
+          rating: number | null
+          summary: string | null
+          title: string
+        }
+        Insert: {
+          author: string
+          cover_url?: string | null
+          created_at?: string
+          genre?: string | null
+          id?: string
+          pages?: number | null
+          published_year?: number | null
+          rating?: number | null
+          summary?: string | null
+          title: string
+        }
+        Update: {
+          author?: string
+          cover_url?: string | null
+          created_at?: string
+          genre?: string | null
+          id?: string
+          pages?: number | null
+          published_year?: number | null
+          rating?: number | null
+          summary?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      club_memberships: {
+        Row: {
+          club_id: string
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_memberships_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clubs: {
+        Row: {
+          active_book_id: string | null
+          avatar_url: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          handle: string
+          id: string
+          is_private: boolean | null
+          member_count: number | null
+          name: string
+        }
+        Insert: {
+          active_book_id?: string | null
+          avatar_url?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          handle: string
+          id?: string
+          is_private?: boolean | null
+          member_count?: number | null
+          name: string
+        }
+        Update: {
+          active_book_id?: string | null
+          avatar_url?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          handle?: string
+          id?: string
+          is_private?: boolean | null
+          member_count?: number | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clubs_active_book_id_fkey"
+            columns: ["active_book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          book_id: string | null
+          club_id: string | null
+          comments_count: number | null
+          content: string
+          created_at: string
+          id: string
+          likes_count: number | null
+          rating: number | null
+          user_id: string
+        }
+        Insert: {
+          book_id?: string | null
+          club_id?: string | null
+          comments_count?: number | null
+          content: string
+          created_at?: string
+          id?: string
+          likes_count?: number | null
+          rating?: number | null
+          user_id: string
+        }
+        Update: {
+          book_id?: string | null
+          club_id?: string | null
+          comments_count?: number | null
+          content?: string
+          created_at?: string
+          id?: string
+          likes_count?: number | null
+          rating?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          reading_goal: number | null
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          reading_goal?: number | null
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          reading_goal?: number | null
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
