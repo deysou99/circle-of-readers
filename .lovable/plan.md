@@ -6,7 +6,7 @@ A mobile-first social reading and book-club app: splash, auth, onboarding, and f
 
 Carried directly from the selected direction:
 
-- Paper `#FDFCF7`, ink `#1C1917`, burgundy `#5D2A2A` (primary accent), forest `#2D4F3C` (progress), parchment `#F5F2EA` (surfaces)
+- Paper `#FAFAFA`, ink `#1C1917`, burgundy `#5D2A2A` (primary accent), forest `#2D4F3C` (progress), parchment `#F5F2EA` (surfaces)
 - Playfair Display for book titles and editorial voice; Public Sans for all UI
 - Moderate radii (rounded-md covers, rounded-xl/2xl surfaces), hairline `ink/5` borders, generous vertical rhythm
 - Phone-width column centered with safe-area padding; tablets get the same column with wider gutters
