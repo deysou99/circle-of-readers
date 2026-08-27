@@ -10,33 +10,291 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedBooksRouteImport } from './routes/_authenticated.books'
+import { Route as AuthenticatedClubsRouteImport } from './routes/_authenticated/clubs'
+import { Route as AuthenticatedCreatePostRouteImport } from './routes/_authenticated.create-post'
+import { Route as AuthenticatedDiscoverRouteImport } from './routes/_authenticated/discover'
+import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated.messages'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated.notifications'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated.profile'
+import { Route as AuthEmailRouteImport } from './routes/auth.email'
+import { Route as AuthenticatedBooksIdRouteImport } from './routes/_authenticated.books.$id'
+import { Route as AuthenticatedClubsIdRouteImport } from './routes/_authenticated.clubs.$id'
+import { Route as AuthenticatedJournalSlugRouteImport } from './routes/_authenticated.journal.$slug'
+import { Route as AuthenticatedMessagesIdRouteImport } from './routes/_authenticated.messages.$id'
+import { Route as AuthenticatedPostsIdRouteImport } from './routes/_authenticated.posts.$id'
+import { Route as AuthenticatedProfileSettingsRouteImport } from './routes/_authenticated.profile.settings'
+import { Route as AuthenticatedReadersIdRouteImport } from './routes/_authenticated.readers.$id'
+import { Route as AuthenticatedClubsIdChatRouteImport } from './routes/_authenticated.clubs.$id.chat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedBooksRoute = AuthenticatedBooksRouteImport.update({
+  id: '/books',
+  path: '/books',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedClubsRoute = AuthenticatedClubsRouteImport.update({
+  id: '/clubs',
+  path: '/clubs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCreatePostRoute = AuthenticatedCreatePostRouteImport.update({
+  id: '/create-post',
+  path: '/create-post',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDiscoverRoute = AuthenticatedDiscoverRouteImport.update({
+  id: '/discover',
+  path: '/discover',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthEmailRoute = AuthEmailRouteImport.update({
+  id: '/email',
+  path: '/email',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthenticatedBooksIdRoute = AuthenticatedBooksIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedBooksRoute,
+} as any)
+const AuthenticatedClubsIdRoute = AuthenticatedClubsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedClubsRoute,
+} as any)
+const AuthenticatedJournalSlugRoute =
+  AuthenticatedJournalSlugRouteImport.update({
+    id: '/journal/$slug',
+    path: '/journal/$slug',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMessagesIdRoute = AuthenticatedMessagesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedMessagesRoute,
+} as any)
+const AuthenticatedPostsIdRoute = AuthenticatedPostsIdRouteImport.update({
+  id: '/posts/$id',
+  path: '/posts/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProfileSettingsRoute =
+  AuthenticatedProfileSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedProfileRoute,
+  } as any)
+const AuthenticatedReadersIdRoute = AuthenticatedReadersIdRouteImport.update({
+  id: '/readers/$id',
+  path: '/readers/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedClubsIdChatRoute =
+  AuthenticatedClubsIdChatRouteImport.update({
+    id: '/chat',
+    path: '/chat',
+    getParentRoute: () => AuthenticatedClubsIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
+  '/books': typeof AuthenticatedBooksRouteWithChildren
+  '/clubs': typeof AuthenticatedClubsRouteWithChildren
+  '/create-post': typeof AuthenticatedCreatePostRoute
+  '/discover': typeof AuthenticatedDiscoverRoute
+  '/home': typeof AuthenticatedHomeRoute
+  '/messages': typeof AuthenticatedMessagesRouteWithChildren
+  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/profile': typeof AuthenticatedProfileRouteWithChildren
+  '/auth/email': typeof AuthEmailRoute
+  '/books/$id': typeof AuthenticatedBooksIdRoute
+  '/clubs/$id': typeof AuthenticatedClubsIdRouteWithChildren
+  '/journal/$slug': typeof AuthenticatedJournalSlugRoute
+  '/messages/$id': typeof AuthenticatedMessagesIdRoute
+  '/posts/$id': typeof AuthenticatedPostsIdRoute
+  '/profile/settings': typeof AuthenticatedProfileSettingsRoute
+  '/readers/$id': typeof AuthenticatedReadersIdRoute
+  '/clubs/$id/chat': typeof AuthenticatedClubsIdChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
+  '/books': typeof AuthenticatedBooksRouteWithChildren
+  '/clubs': typeof AuthenticatedClubsRouteWithChildren
+  '/create-post': typeof AuthenticatedCreatePostRoute
+  '/discover': typeof AuthenticatedDiscoverRoute
+  '/home': typeof AuthenticatedHomeRoute
+  '/messages': typeof AuthenticatedMessagesRouteWithChildren
+  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/profile': typeof AuthenticatedProfileRouteWithChildren
+  '/auth/email': typeof AuthEmailRoute
+  '/books/$id': typeof AuthenticatedBooksIdRoute
+  '/clubs/$id': typeof AuthenticatedClubsIdRouteWithChildren
+  '/journal/$slug': typeof AuthenticatedJournalSlugRoute
+  '/messages/$id': typeof AuthenticatedMessagesIdRoute
+  '/posts/$id': typeof AuthenticatedPostsIdRoute
+  '/profile/settings': typeof AuthenticatedProfileSettingsRoute
+  '/readers/$id': typeof AuthenticatedReadersIdRoute
+  '/clubs/$id/chat': typeof AuthenticatedClubsIdChatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/books': typeof AuthenticatedBooksRouteWithChildren
+  '/_authenticated/clubs': typeof AuthenticatedClubsRouteWithChildren
+  '/_authenticated/create-post': typeof AuthenticatedCreatePostRoute
+  '/_authenticated/discover': typeof AuthenticatedDiscoverRoute
+  '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/messages': typeof AuthenticatedMessagesRouteWithChildren
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRouteWithChildren
+  '/auth/email': typeof AuthEmailRoute
+  '/_authenticated/books/$id': typeof AuthenticatedBooksIdRoute
+  '/_authenticated/clubs/$id': typeof AuthenticatedClubsIdRouteWithChildren
+  '/_authenticated/journal/$slug': typeof AuthenticatedJournalSlugRoute
+  '/_authenticated/messages/$id': typeof AuthenticatedMessagesIdRoute
+  '/_authenticated/posts/$id': typeof AuthenticatedPostsIdRoute
+  '/_authenticated/profile/settings': typeof AuthenticatedProfileSettingsRoute
+  '/_authenticated/readers/$id': typeof AuthenticatedReadersIdRoute
+  '/_authenticated/clubs/$id/chat': typeof AuthenticatedClubsIdChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/books'
+    | '/clubs'
+    | '/create-post'
+    | '/discover'
+    | '/home'
+    | '/messages'
+    | '/notifications'
+    | '/onboarding'
+    | '/profile'
+    | '/auth/email'
+    | '/books/$id'
+    | '/clubs/$id'
+    | '/journal/$slug'
+    | '/messages/$id'
+    | '/posts/$id'
+    | '/profile/settings'
+    | '/readers/$id'
+    | '/clubs/$id/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/books'
+    | '/clubs'
+    | '/create-post'
+    | '/discover'
+    | '/home'
+    | '/messages'
+    | '/notifications'
+    | '/onboarding'
+    | '/profile'
+    | '/auth/email'
+    | '/books/$id'
+    | '/clubs/$id'
+    | '/journal/$slug'
+    | '/messages/$id'
+    | '/posts/$id'
+    | '/profile/settings'
+    | '/readers/$id'
+    | '/clubs/$id/chat'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/reset-password'
+    | '/_authenticated/books'
+    | '/_authenticated/clubs'
+    | '/_authenticated/create-post'
+    | '/_authenticated/discover'
+    | '/_authenticated/home'
+    | '/_authenticated/messages'
+    | '/_authenticated/notifications'
+    | '/_authenticated/onboarding'
+    | '/_authenticated/profile'
+    | '/auth/email'
+    | '/_authenticated/books/$id'
+    | '/_authenticated/clubs/$id'
+    | '/_authenticated/journal/$slug'
+    | '/_authenticated/messages/$id'
+    | '/_authenticated/posts/$id'
+    | '/_authenticated/profile/settings'
+    | '/_authenticated/readers/$id'
+    | '/_authenticated/clubs/$id/chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRouteWithChildren
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +306,261 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/books': {
+      id: '/_authenticated/books'
+      path: '/books'
+      fullPath: '/books'
+      preLoaderRoute: typeof AuthenticatedBooksRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clubs': {
+      id: '/_authenticated/clubs'
+      path: '/clubs'
+      fullPath: '/clubs'
+      preLoaderRoute: typeof AuthenticatedClubsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/create-post': {
+      id: '/_authenticated/create-post'
+      path: '/create-post'
+      fullPath: '/create-post'
+      preLoaderRoute: typeof AuthenticatedCreatePostRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/discover': {
+      id: '/_authenticated/discover'
+      path: '/discover'
+      fullPath: '/discover'
+      preLoaderRoute: typeof AuthenticatedDiscoverRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/home': {
+      id: '/_authenticated/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AuthenticatedHomeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/messages': {
+      id: '/_authenticated/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof AuthenticatedMessagesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/auth/email': {
+      id: '/auth/email'
+      path: '/email'
+      fullPath: '/auth/email'
+      preLoaderRoute: typeof AuthEmailRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_authenticated/books/$id': {
+      id: '/_authenticated/books/$id'
+      path: '/$id'
+      fullPath: '/books/$id'
+      preLoaderRoute: typeof AuthenticatedBooksIdRouteImport
+      parentRoute: typeof AuthenticatedBooksRoute
+    }
+    '/_authenticated/clubs/$id': {
+      id: '/_authenticated/clubs/$id'
+      path: '/$id'
+      fullPath: '/clubs/$id'
+      preLoaderRoute: typeof AuthenticatedClubsIdRouteImport
+      parentRoute: typeof AuthenticatedClubsRoute
+    }
+    '/_authenticated/journal/$slug': {
+      id: '/_authenticated/journal/$slug'
+      path: '/journal/$slug'
+      fullPath: '/journal/$slug'
+      preLoaderRoute: typeof AuthenticatedJournalSlugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/messages/$id': {
+      id: '/_authenticated/messages/$id'
+      path: '/$id'
+      fullPath: '/messages/$id'
+      preLoaderRoute: typeof AuthenticatedMessagesIdRouteImport
+      parentRoute: typeof AuthenticatedMessagesRoute
+    }
+    '/_authenticated/posts/$id': {
+      id: '/_authenticated/posts/$id'
+      path: '/posts/$id'
+      fullPath: '/posts/$id'
+      preLoaderRoute: typeof AuthenticatedPostsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/profile/settings': {
+      id: '/_authenticated/profile/settings'
+      path: '/settings'
+      fullPath: '/profile/settings'
+      preLoaderRoute: typeof AuthenticatedProfileSettingsRouteImport
+      parentRoute: typeof AuthenticatedProfileRoute
+    }
+    '/_authenticated/readers/$id': {
+      id: '/_authenticated/readers/$id'
+      path: '/readers/$id'
+      fullPath: '/readers/$id'
+      preLoaderRoute: typeof AuthenticatedReadersIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clubs/$id/chat': {
+      id: '/_authenticated/clubs/$id/chat'
+      path: '/chat'
+      fullPath: '/clubs/$id/chat'
+      preLoaderRoute: typeof AuthenticatedClubsIdChatRouteImport
+      parentRoute: typeof AuthenticatedClubsIdRoute
+    }
   }
 }
 
+interface AuthenticatedBooksRouteChildren {
+  AuthenticatedBooksIdRoute: typeof AuthenticatedBooksIdRoute
+}
+
+const AuthenticatedBooksRouteChildren: AuthenticatedBooksRouteChildren = {
+  AuthenticatedBooksIdRoute: AuthenticatedBooksIdRoute,
+}
+
+const AuthenticatedBooksRouteWithChildren =
+  AuthenticatedBooksRoute._addFileChildren(AuthenticatedBooksRouteChildren)
+
+interface AuthenticatedClubsIdRouteChildren {
+  AuthenticatedClubsIdChatRoute: typeof AuthenticatedClubsIdChatRoute
+}
+
+const AuthenticatedClubsIdRouteChildren: AuthenticatedClubsIdRouteChildren = {
+  AuthenticatedClubsIdChatRoute: AuthenticatedClubsIdChatRoute,
+}
+
+const AuthenticatedClubsIdRouteWithChildren =
+  AuthenticatedClubsIdRoute._addFileChildren(AuthenticatedClubsIdRouteChildren)
+
+interface AuthenticatedClubsRouteChildren {
+  AuthenticatedClubsIdRoute: typeof AuthenticatedClubsIdRouteWithChildren
+}
+
+const AuthenticatedClubsRouteChildren: AuthenticatedClubsRouteChildren = {
+  AuthenticatedClubsIdRoute: AuthenticatedClubsIdRouteWithChildren,
+}
+
+const AuthenticatedClubsRouteWithChildren =
+  AuthenticatedClubsRoute._addFileChildren(AuthenticatedClubsRouteChildren)
+
+interface AuthenticatedMessagesRouteChildren {
+  AuthenticatedMessagesIdRoute: typeof AuthenticatedMessagesIdRoute
+}
+
+const AuthenticatedMessagesRouteChildren: AuthenticatedMessagesRouteChildren = {
+  AuthenticatedMessagesIdRoute: AuthenticatedMessagesIdRoute,
+}
+
+const AuthenticatedMessagesRouteWithChildren =
+  AuthenticatedMessagesRoute._addFileChildren(
+    AuthenticatedMessagesRouteChildren,
+  )
+
+interface AuthenticatedProfileRouteChildren {
+  AuthenticatedProfileSettingsRoute: typeof AuthenticatedProfileSettingsRoute
+}
+
+const AuthenticatedProfileRouteChildren: AuthenticatedProfileRouteChildren = {
+  AuthenticatedProfileSettingsRoute: AuthenticatedProfileSettingsRoute,
+}
+
+const AuthenticatedProfileRouteWithChildren =
+  AuthenticatedProfileRoute._addFileChildren(AuthenticatedProfileRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBooksRoute: typeof AuthenticatedBooksRouteWithChildren
+  AuthenticatedClubsRoute: typeof AuthenticatedClubsRouteWithChildren
+  AuthenticatedCreatePostRoute: typeof AuthenticatedCreatePostRoute
+  AuthenticatedDiscoverRoute: typeof AuthenticatedDiscoverRoute
+  AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRouteWithChildren
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRouteWithChildren
+  AuthenticatedJournalSlugRoute: typeof AuthenticatedJournalSlugRoute
+  AuthenticatedPostsIdRoute: typeof AuthenticatedPostsIdRoute
+  AuthenticatedReadersIdRoute: typeof AuthenticatedReadersIdRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBooksRoute: AuthenticatedBooksRouteWithChildren,
+  AuthenticatedClubsRoute: AuthenticatedClubsRouteWithChildren,
+  AuthenticatedCreatePostRoute: AuthenticatedCreatePostRoute,
+  AuthenticatedDiscoverRoute: AuthenticatedDiscoverRoute,
+  AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedMessagesRoute: AuthenticatedMessagesRouteWithChildren,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRouteWithChildren,
+  AuthenticatedJournalSlugRoute: AuthenticatedJournalSlugRoute,
+  AuthenticatedPostsIdRoute: AuthenticatedPostsIdRoute,
+  AuthenticatedReadersIdRoute: AuthenticatedReadersIdRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+interface AuthRouteChildren {
+  AuthEmailRoute: typeof AuthEmailRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthEmailRoute: AuthEmailRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRouteWithChildren,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
