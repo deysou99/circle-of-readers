@@ -38,7 +38,7 @@ export function HomeScreen() {
         <div className="flex flex-col items-center gap-1.5">
           <div className="relative">
             <Avatar className="h-16 w-16 ring-2 ring-primary ring-offset-2 ring-offset-paper">
-              <AvatarImage src={READERS[0].avatar} />
+              <AvatarImage src={READERS[0]?.avatar} />
               <AvatarFallback>YO</AvatarFallback>
             </Avatar>
             <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">+</div>
