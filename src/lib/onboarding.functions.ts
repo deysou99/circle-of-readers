@@ -350,17 +350,21 @@ export const logOnboardingEvent = createServerFn({ method: "POST" })
     metadata?: Record<string, unknown>;
   }) => input)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId, claims } = context;
     if (!(ONBOARDING_EVENTS as readonly string[]).includes(data.eventType)) {
       return { ok: false as const };
     }
+    const appMeta = (claims['app_metadata'] ?? {}) as Record<string, unknown>;
+    const providers = Array.isArray(appMeta['providers']) ? (appMeta['providers'] as string[]) : [];
+    const signupMethod =
+      appMeta['provider'] === "google" || providers.includes("google") ? "google" : "email";
     const { error } = await supabase.from("onboarding_events").insert({
       user_id: userId,
       session_id: data.sessionId.slice(0, 64),
       event_type: data.eventType,
       stage_index: data.stageIndex ?? null,
       stage_key: data.stageKey ?? null,
-      metadata: (data.metadata ?? {}) as never,
+      metadata: { ...(data.metadata ?? {}), signupMethod } as never,
     });
     if (error) return { ok: false as const };
     return { ok: true as const };
