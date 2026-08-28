@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -61,6 +61,16 @@ export function GoodreadsPanel({ value, onChange, invalidateKeys = [], title, su
   const [url, setUrl] = useState(value.profileUrl ?? "");
   const [error, setError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Keep local state in step with async-loaded props (e.g. profile query resolving).
+  const signature = JSON.stringify(value);
+  const lastSignature = useRef(signature);
+  useEffect(() => {
+    if (lastSignature.current === signature) return;
+    lastSignature.current = signature;
+    setState(value);
+    setUrl(value.profileUrl ?? "");
+  }, [signature, value]);
 
   function apply(next: GoodreadsState) {
     setState(next);
