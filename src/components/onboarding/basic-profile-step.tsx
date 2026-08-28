@@ -4,14 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  connectGoodreads,
-  disconnectGoodreads,
-  saveBasicProfile,
-  startGoodreadsConnect,
-} from "@/lib/onboarding.functions";
+import { saveBasicProfile } from "@/lib/onboarding.functions";
+import { GoodreadsPanel, type GoodreadsState } from "@/components/goodreads-panel";
 import { toast } from "sonner";
-import { AlertCircle, Check, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 
 interface Props {
@@ -23,6 +19,9 @@ interface Props {
     phone: string | null;
     goodreads_connected: boolean;
     goodreads_profile: string | null;
+    goodreads_verified_at?: string | null;
+    goodreads_last_sync_at?: string | null;
+    goodreads_stats?: unknown;
   } | null;
   isGoogle: boolean;
   onDone: () => void;
@@ -37,10 +36,13 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
   const [email, setEmail] = useState(profile?.email ?? identity.email ?? "");
   const [phone, setPhone] = useState(profile?.phone ?? "");
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [goodreadsOpen, setGoodreadsOpen] = useState(false);
-  const [goodreadsUrl, setGoodreadsUrl] = useState(profile?.goodreads_profile ?? "");
-  const [goodreadsConnected, setGoodreadsConnected] = useState(profile?.goodreads_connected ?? false);
-  const [goodreadsError, setGoodreadsError] = useState("");
+  const [goodreads, setGoodreads] = useState<GoodreadsState>({
+    connected: profile?.goodreads_connected ?? false,
+    profileUrl: profile?.goodreads_profile ?? "",
+    verifiedAt: profile?.goodreads_verified_at ?? null,
+    lastSyncAt: profile?.goodreads_last_sync_at ?? null,
+    stats: (profile?.goodreads_stats as GoodreadsState["stats"]) ?? null,
+  });
 
 
   const emailLocked = isGoogle && !!identity.email;
@@ -55,9 +57,6 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
   const valid = !Object.values(errors).some(Boolean);
 
   const save = useServerFn(saveBasicProfile);
-  const link = useServerFn(connectGoodreads);
-  const unlink = useServerFn(disconnectGoodreads);
-  const startConnect = useServerFn(startGoodreadsConnect);
 
 
   const saveMutation = useMutation({
@@ -68,59 +67,14 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
           lastName,
           email,
           phone,
-          goodreadsConnected,
-          goodreadsProfile: goodreadsUrl,
+          goodreadsConnected: goodreads.connected,
+          goodreadsProfile: goodreads.profileUrl,
           ...(identity.avatarUrl ? { avatarUrl: identity.avatarUrl } : {}),
         },
       }),
     onSuccess: onDone,
     onError: (e: Error) => toast.error(e.message),
   });
-
-  const goodreadsMutation = useMutation({
-    mutationFn: () => link({ data: { profileUrl: goodreadsUrl } }),
-    onSuccess: (res) => {
-      setGoodreadsUrl(res.profileUrl);
-      setGoodreadsConnected(true);
-      setGoodreadsOpen(false);
-      setGoodreadsError("");
-      toast.success(
-        res.verified
-          ? "Goodreads profile linked."
-          : "Goodreads profile saved — we couldn't reach it just now, so double-check it's public.",
-      );
-    },
-    onError: (e: Error) => setGoodreadsError(e.message || "Something went wrong. Please try again."),
-  });
-
-  const disconnectMutation = useMutation({
-    mutationFn: () => unlink({}),
-    onSuccess: () => {
-      setGoodreadsConnected(false);
-      setGoodreadsUrl("");
-      setGoodreadsError("");
-      toast.success("Goodreads disconnected.");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const startMutation = useMutation({
-    mutationFn: () => startConnect({}),
-    onSuccess: (res) => {
-      if (res.mode === "oauth" && res.authorizeUrl) {
-        window.location.href = res.authorizeUrl;
-        return;
-      }
-      setGoodreadsOpen(true);
-      setGoodreadsError("");
-      if (res.message) toast.info(res.message);
-    },
-    onError: () => {
-      setGoodreadsOpen(true);
-      setGoodreadsError("We couldn't start the Goodreads connection. Paste your profile link instead.");
-    },
-  });
-
 
   function field(key: keyof typeof errors) {
     return touched[key] && errors[key] ? (
@@ -213,94 +167,18 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
         )}
       </div>
 
-      <div className="mt-7 rounded-2xl border border-border bg-parchment p-5">
-        <p className="text-sm font-medium text-ink">Already have a reading history?</p>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-          {isGoogle
-            ? "Connect your Goodreads account and we'll get to know your reading taste faster."
-            : "Connect Goodreads and bring it with you."}
-        </p>
-        {goodreadsConnected ? (
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-forest">
-              <Check size={16} /> Goodreads connected
-            </div>
-            {goodreadsUrl && (
-              <p className="truncate text-xs text-muted-foreground">{goodreadsUrl}</p>
-            )}
-            <Button
-              variant="ghost"
-              onClick={() => disconnectMutation.mutate()}
-              disabled={disconnectMutation.isPending}
-              className="h-9 rounded-xl px-0 text-xs text-muted-foreground hover:bg-transparent hover:text-secondary"
-            >
-              {disconnectMutation.isPending ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
-              Disconnect
-            </Button>
-          </div>
-        ) : goodreadsOpen ? (
-          <div className="mt-4 space-y-2">
-            <Input
-              value={goodreadsUrl}
-              onChange={(e) => {
-                setGoodreadsUrl(e.target.value);
-                setGoodreadsError("");
-              }}
-              placeholder="https://goodreads.com/user/show/…"
-              className="h-11 rounded-xl border-input bg-paper"
-              disabled={goodreadsMutation.isPending}
-            />
-            {goodreadsError ? (
-              <p className="flex items-start gap-1.5 text-xs text-secondary">
-                <AlertCircle size={13} className="mt-px shrink-0" />
-                {goodreadsError}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Open Goodreads, tap your profile, and paste the link (or just your profile ID).
-              </p>
-            )}
-            <div className="flex gap-2">
-              <Button
-                onClick={() => goodreadsMutation.mutate()}
-                disabled={goodreadsMutation.isPending || !goodreadsUrl.trim()}
-                className="h-10 flex-1 rounded-xl bg-ink text-paper hover:bg-ink/90 disabled:opacity-40"
-              >
-                {goodreadsMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying…
-                  </>
-                ) : (
-                  "Save link"
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setGoodreadsOpen(false);
-                  setGoodreadsError("");
-                }}
-                disabled={goodreadsMutation.isPending}
-                className="h-10 rounded-xl text-muted-foreground"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <Button
-            variant="outline"
-            onClick={() => startMutation.mutate()}
-            disabled={startMutation.isPending}
-            className="mt-4 h-11 w-full rounded-xl border-border bg-paper text-ink hover:bg-muted"
-          >
-            {startMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Connect Goodreads
-          </Button>
-        )}
+      <div className="mt-7">
+        <GoodreadsPanel
+          value={goodreads}
+          onChange={setGoodreads}
+          subtitle={
+            isGoogle
+              ? "Connect your Goodreads account and we'll get to know your reading taste faster."
+              : "Connect Goodreads and bring your shelves with you."
+          }
+        />
         <p className="mt-3 text-xs text-muted-foreground">Optional — you can do this later.</p>
       </div>
-
 
       <div className="mt-auto pt-8 safe-bottom">
         <Button
