@@ -274,9 +274,17 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string | null
+          email: string | null
           favorite_genres: string[]
+          first_name: string | null
+          goodreads_connected: boolean
+          goodreads_profile: string | null
           id: string
+          last_name: string | null
           onboarded: boolean
+          onboarding_step: number
+          phone: string | null
+          profile_completed: boolean
           reading_goal: number | null
           reading_pace: string | null
           updated_at: string
@@ -288,9 +296,17 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           favorite_genres?: string[]
+          first_name?: string | null
+          goodreads_connected?: boolean
+          goodreads_profile?: string | null
           id?: string
+          last_name?: string | null
           onboarded?: boolean
+          onboarding_step?: number
+          phone?: string | null
+          profile_completed?: boolean
           reading_goal?: number | null
           reading_pace?: string | null
           updated_at?: string
@@ -302,14 +318,73 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           favorite_genres?: string[]
+          first_name?: string | null
+          goodreads_connected?: boolean
+          goodreads_profile?: string | null
           id?: string
+          last_name?: string | null
           onboarded?: boolean
+          onboarding_step?: number
+          phone?: string | null
+          profile_completed?: boolean
           reading_goal?: number | null
           reading_pace?: string | null
           updated_at?: string
           user_id?: string
           username?: string
+        }
+        Relationships: []
+      }
+      reader_profiles: {
+        Row: {
+          community_motivations: string[]
+          completed: boolean
+          conversation_style: string[]
+          created_at: string
+          curiosity_preferences: string[]
+          id: string
+          personality_description: string | null
+          personality_name: string | null
+          post_book_behaviour: string[]
+          reading_interruptions: string[]
+          reading_locations: string[]
+          traits: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          community_motivations?: string[]
+          completed?: boolean
+          conversation_style?: string[]
+          created_at?: string
+          curiosity_preferences?: string[]
+          id?: string
+          personality_description?: string | null
+          personality_name?: string | null
+          post_book_behaviour?: string[]
+          reading_interruptions?: string[]
+          reading_locations?: string[]
+          traits?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          community_motivations?: string[]
+          completed?: boolean
+          conversation_style?: string[]
+          created_at?: string
+          curiosity_preferences?: string[]
+          id?: string
+          personality_description?: string | null
+          personality_name?: string | null
+          post_book_behaviour?: string[]
+          reading_interruptions?: string[]
+          reading_locations?: string[]
+          traits?: Json
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -367,9 +442,17 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string | null
+          email: string | null
           favorite_genres: string[]
+          first_name: string | null
+          goodreads_connected: boolean
+          goodreads_profile: string | null
           id: string
+          last_name: string | null
           onboarded: boolean
+          onboarding_step: number
+          phone: string | null
+          profile_completed: boolean
           reading_goal: number | null
           reading_pace: string | null
           updated_at: string
