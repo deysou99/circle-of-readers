@@ -91,9 +91,10 @@ export const getReader = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data: profile } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id, user_id, username, display_name, avatar_url, bio, created_at")
       .eq("user_id", data.userId)
       .maybeSingle();
+
 
     const [{ count: followers }, { count: following }, { data: isFollowing }, { data: posts }] =
       await Promise.all([
