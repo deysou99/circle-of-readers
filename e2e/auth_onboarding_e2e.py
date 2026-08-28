@@ -60,7 +60,7 @@ async def main() -> int:
         check("No duplicate history entries from repeat taps", page.url.endswith("/auth/email"))
 
         # 4. Sign up a fresh account and confirm we leave the credentials screen.
-        email = f"e2e+{int(time.time())}@circle-e2e.test"
+        email = f"circle.e2e.{int(time.time())}@gmail.com"
         await page.get_by_role("button", name="Sign up", exact=True).click()
         await page.wait_for_timeout(500)
         await page.get_by_label("Email").fill(email)
@@ -68,6 +68,7 @@ async def main() -> int:
         await page.get_by_role("button", name="Create account").click()
         await page.wait_for_timeout(6000)
         left_credentials = "/auth/email" not in page.url
+        check("Sign-up lands on email verification", "/verify-email" in page.url, page.url)
         check(
             "Sign-up leaves the credentials screen (verification or onboarding)",
             left_credentials,
