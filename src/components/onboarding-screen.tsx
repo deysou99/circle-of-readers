@@ -91,8 +91,14 @@ export function OnboardingScreen({ editMode = false }: { editMode?: boolean } = 
 
   // Stage views + drop-off tracking.
   useEffect(() => {
-    if (phase === "reader") track("stage_viewed", stage);
+    if (phase === "reader") {
+      track("stage_viewed", stage);
+      // Persist the current stage so closing the app resumes right here.
+      if (!editMode) stageMutation.mutate({ step: stage + 1, answers });
+    }
     if (phase === "profile") track("profile_step_viewed");
+    // Answers are persisted by the mutation itself; stage changes drive this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, stage, track]);
 
   const completedRef = useRef(false);

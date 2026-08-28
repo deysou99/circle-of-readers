@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,16 +7,51 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
+const EMAIL_DRAFT_KEY = "circle.auth.email-draft";
+
 export function EmailAuthScreen() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  // Preserve the typed email across reloads and retries.
+  useEffect(() => {
+    const saved = sessionStorage.getItem(EMAIL_DRAFT_KEY);
+    if (saved) setEmail(saved);
+  }, []);
+  useEffect(() => {
+    if (email) sessionStorage.setItem(EMAIL_DRAFT_KEY, email);
+  }, [email]);
+
+  function fail(message: string, context: Record<string, unknown>) {
+    console.error("[auth] Continue with Email failed", { mode, email, ...context });
+    setFailure(message);
+    toast.error(message);
+  }
+
+  async function run() {
+    setLoading(true);
+    setFailure(null);
+    try {
+      await submitCredentials();
+    } catch (error) {
+      fail(
+        "Something went wrong reaching Circle. Check your connection and try again.",
+        { error: error instanceof Error ? error.message : String(error) },
+      );
+      setLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
+    void run();
+  }
+
+  async function submitCredentials() {
 
     if (mode === "signup") {
       const { data, error } = await supabase.auth.signUp({
@@ -26,11 +61,12 @@ export function EmailAuthScreen() {
       });
       setLoading(false);
       if (error) {
-        toast.error(error.message);
+        fail(error.message, { stage: "signup" });
       } else if (data.user && !data.user.email_confirmed_at) {
         toast.success("Account created. Confirm your email to continue.");
         navigate({ to: "/verify-email", replace: true });
       } else if (data.session) {
+        sessionStorage.removeItem(EMAIL_DRAFT_KEY);
         navigate({ to: "/onboarding", replace: true });
       } else {
         setMode("signin");
@@ -39,13 +75,14 @@ export function EmailAuthScreen() {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       setLoading(false);
       if (error) {
-        toast.error(error.message);
+        fail(error.message, { stage: "signin" });
       } else if (data.session) {
         if (!data.user?.email_confirmed_at && (data.user?.app_metadata?.provider ?? "email") === "email") {
           navigate({ to: "/verify-email", replace: true });
           return;
         }
         // /onboarding resumes an incomplete flow, or forwards to /home.
+        sessionStorage.removeItem(EMAIL_DRAFT_KEY);
         navigate({ to: "/onboarding", replace: true });
       }
     }
@@ -77,6 +114,20 @@ export function EmailAuthScreen() {
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {mode === "signin" ? "Sign in" : "Create account"}
           </Button>
+          {failure && (
+            <div role="alert" className="rounded-xl border border-secondary/30 bg-secondary/10 p-3">
+              <p className="text-xs text-ink">{failure}</p>
+              <Button
+                type="button"
+                onClick={() => void run()}
+                disabled={loading}
+                variant="outline"
+                className="mt-2 h-9 w-full rounded-lg border-border bg-paper text-ink hover:bg-muted"
+              >
+                Retry with {email || "this email"}
+              </Button>
+            </div>
+          )}
         </form>
 
         <div className="mt-6 flex items-center justify-between text-sm">
