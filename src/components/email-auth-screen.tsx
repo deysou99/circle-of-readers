@@ -19,20 +19,27 @@ export function EmailAuthScreen() {
     setLoading(true);
 
     if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin },
+      });
       setLoading(false);
       if (error) {
         toast.error(error.message);
+      } else if (data.session) {
+        navigate({ to: "/onboarding" });
       } else {
-        toast.success("Account created. Check your email to confirm.");
+        toast.success("Account created. Check your email to confirm, then sign in.");
+        setMode("signin");
       }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       setLoading(false);
       if (error) {
         toast.error(error.message);
-      } else {
-        navigate({ to: "/onboarding" });
+      } else if (data.session) {
+        navigate({ to: "/home" });
       }
     }
   }
