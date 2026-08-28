@@ -1,22 +1,49 @@
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export function AuthScreen() {
   const navigate = useNavigate();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   async function handleGoogle() {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result?.error) {
-      toast.error(result.error.message ?? "Could not sign in with Google");
-      return;
+    if (googleLoading || emailLoading) return;
+    setGoogleLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result?.error) {
+        toast.error(result.error.message ?? "Could not sign in with Google");
+        return;
+      }
+      if (!result?.redirected) {
+        // /onboarding sends already-onboarded members straight to /home.
+        await navigate({ to: "/onboarding", replace: true });
+      }
+    } finally {
+      setGoogleLoading(false);
     }
-    if (!result?.redirected) {
-      // /onboarding sends already-onboarded members straight to /home.
-      navigate({ to: "/onboarding" });
+  }
+
+  async function handleEmail() {
+    if (emailLoading || googleLoading) return;
+    setEmailLoading(true);
+    setEmailError(null);
+    try {
+      await navigate({ to: "/auth/email" });
+    } catch (error) {
+      console.error("[auth] Continue with Email navigation failed", error);
+      setEmailError(
+        error instanceof Error ? error.message : "We couldn't open the email sign-up page.",
+      );
+    } finally {
+      setEmailLoading(false);
     }
   }
 
@@ -38,7 +65,7 @@ export function AuthScreen() {
       </div>
 
       <div className="mb-8 space-y-3 safe-bottom">
-        <Button onClick={handleGoogle} variant="outline" className="h-12 w-full gap-2 rounded-xl border-border bg-paper text-ink hover:bg-muted">
+        <Button onClick={handleGoogle} disabled={googleLoading || emailLoading} variant="outline" className="h-12 w-full gap-2 rounded-xl border-border bg-paper text-ink hover:bg-muted">
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -47,9 +74,27 @@ export function AuthScreen() {
           </svg>
           Continue with Google
         </Button>
-        <Button onClick={() => navigate({ to: "/auth/email" })} className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90">
-          Continue with Email
+        <Button
+          onClick={handleEmail}
+          disabled={emailLoading || googleLoading}
+          aria-busy={emailLoading}
+          className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          {emailLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          {emailLoading ? "Opening…" : "Continue with Email"}
         </Button>
+        {emailError ? (
+          <div role="alert" className="rounded-xl border border-secondary/30 bg-secondary/10 p-3 text-left">
+            <p className="text-xs text-ink">{emailError}</p>
+            <Button
+              onClick={handleEmail}
+              variant="outline"
+              className="mt-2 h-9 w-full rounded-lg border-border bg-paper text-ink hover:bg-muted"
+            >
+              Retry
+            </Button>
+          </div>
+        ) : null}
         <p className="pt-2 text-xs text-muted-foreground">
           By continuing, you agree to our Terms of Service and Privacy Policy.
         </p>

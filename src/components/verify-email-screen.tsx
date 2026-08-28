@@ -20,7 +20,7 @@ export function VerifyEmailScreen() {
         return;
       }
       setEmail(user.email ?? "");
-      if (user.email_confirmed_at) navigate({ to: "/onboarding" });
+      if (user.email_confirmed_at) navigate({ to: "/onboarding", replace: true });
     });
   }, [navigate]);
 
@@ -31,7 +31,7 @@ export function VerifyEmailScreen() {
       if (data.user?.email_confirmed_at) {
         clearInterval(id);
         toast.success("Email verified");
-        navigate({ to: "/onboarding" });
+        navigate({ to: "/onboarding", replace: true });
       }
     }, 5000);
     return () => clearInterval(id);
@@ -63,7 +63,7 @@ export function VerifyEmailScreen() {
     setChecking(true);
     const { data } = await supabase.auth.getUser();
     setChecking(false);
-    if (data.user?.email_confirmed_at) navigate({ to: "/onboarding" });
+    if (data.user?.email_confirmed_at) navigate({ to: "/onboarding", replace: true });
     else toast.error("Not verified yet — open the link in your inbox.");
   }
 

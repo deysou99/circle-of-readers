@@ -29,9 +29,9 @@ export function EmailAuthScreen() {
         toast.error(error.message);
       } else if (data.user && !data.user.email_confirmed_at) {
         toast.success("Account created. Confirm your email to continue.");
-        navigate({ to: "/verify-email" });
+        navigate({ to: "/verify-email", replace: true });
       } else if (data.session) {
-        navigate({ to: "/onboarding" });
+        navigate({ to: "/onboarding", replace: true });
       } else {
         setMode("signin");
       }
@@ -42,11 +42,11 @@ export function EmailAuthScreen() {
         toast.error(error.message);
       } else if (data.session) {
         if (!data.user?.email_confirmed_at && (data.user?.app_metadata?.provider ?? "email") === "email") {
-          navigate({ to: "/verify-email" });
+          navigate({ to: "/verify-email", replace: true });
           return;
         }
         // /onboarding resumes an incomplete flow, or forwards to /home.
-        navigate({ to: "/onboarding" });
+        navigate({ to: "/onboarding", replace: true });
       }
     }
   }
