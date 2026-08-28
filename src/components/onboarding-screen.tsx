@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -21,6 +21,7 @@ import {
   type Personality,
   type ReaderAnswers,
 } from "@/lib/reader-onboarding";
+import { useOnboardingTracker } from "@/lib/use-onboarding-tracker";
 import { BasicProfileStep } from "@/components/onboarding/basic-profile-step";
 import {
   CardGroup,
@@ -32,12 +33,13 @@ import {
 
 const TOTAL_STAGES = 4;
 
-export function OnboardingScreen() {
+export function OnboardingScreen({ editMode = false }: { editMode?: boolean } = {}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchState = useServerFn(getOnboardingState);
   const persistStage = useServerFn(saveReaderStage);
   const finish = useServerFn(completeOnboarding);
+  const track = useOnboardingTracker(editMode);
 
   const stateQuery = useQuery({
     queryKey: ["onboarding-state"],
@@ -55,7 +57,7 @@ export function OnboardingScreen() {
   useEffect(() => {
     if (!data) return;
     if (phase === "reveal") return;
-    if (data.stage === "done") {
+    if (data.stage === "done" && !editMode) {
       navigate({ to: "/home" });
       return;
     }
@@ -70,10 +72,37 @@ export function OnboardingScreen() {
       });
     }
     if (phase !== "loading") return;
+    if (editMode) {
+      setStage(0);
+      setPhase("reader");
+      track("edit_answers_started", 0);
+      return;
+    }
     const resume = Math.min(Math.max((data.profile?.onboarding_step ?? 1) - 1, 0), TOTAL_STAGES - 1);
     setStage(resume);
     setPhase(data.stage === "profile" ? "profile" : "reader");
-  }, [data, navigate, phase]);
+    track(resume > 0 || data.stage === "reader" ? "onboarding_resumed" : "onboarding_started", resume, {
+      entryStage: data.stage,
+    });
+  }, [data, navigate, phase, editMode, track]);
+
+  // Stage views + drop-off tracking.
+  useEffect(() => {
+    if (phase === "reader") track("stage_viewed", stage);
+    if (phase === "profile") track("profile_step_viewed");
+  }, [phase, stage, track]);
+
+  const completedRef = useRef(false);
+  useEffect(() => {
+    if (phase !== "reader") return;
+    const stageAtMount = stage;
+    return () => {
+      if (completedRef.current) return;
+      track("onboarding_abandoned", stageAtMount, { reason: "left-stage" });
+    };
+    // Only fire the abandon probe when the flow itself unmounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   const stageMutation = useMutation({
     mutationFn: (input: { step: number; answers: Partial<ReaderAnswers> }) => persistStage({ data: input }),
@@ -83,9 +112,14 @@ export function OnboardingScreen() {
   const finishMutation = useMutation({
     mutationFn: () => finish({ data: { answers } }),
     onSuccess: (result) => {
+      completedRef.current = true;
       setPersonality(result.personality);
       setPhase("reveal");
+      track(editMode ? "personality_regenerated" : "onboarding_completed", TOTAL_STAGES - 1, {
+        personality: result.personality.name,
+      });
       queryClient.invalidateQueries({ queryKey: ["my-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["reader-profile"] });
       queryClient.removeQueries({ queryKey: ["onboarding-state"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -104,12 +138,27 @@ export function OnboardingScreen() {
 
   function goNext() {
     stageMutation.mutate({ step: stage + 2, answers });
+    track("stage_completed", stage);
     if (stage === TOTAL_STAGES - 1) {
       finishMutation.mutate();
     } else {
       setStage((s) => s + 1);
     }
   }
+
+  function goBack() {
+    if (stage === 0) {
+      if (editMode) {
+        navigate({ to: "/profile/settings" });
+        return;
+      }
+      setPhase("profile");
+      return;
+    }
+    track("stage_back", stage);
+    setStage((s) => s - 1);
+  }
+
 
   if (phase === "loading" || stateQuery.isLoading) {
     return (
@@ -137,7 +186,13 @@ export function OnboardingScreen() {
   }
 
   if (phase === "reveal" && personality) {
-    return <PersonalityReveal personality={personality} onEnter={() => navigate({ to: "/home" })} />;
+    return (
+      <PersonalityReveal
+        personality={personality}
+        editMode={editMode}
+        onEnter={() => navigate({ to: editMode ? "/profile" : "/home" })}
+      />
+    );
   }
 
   return (
@@ -145,7 +200,7 @@ export function OnboardingScreen() {
       <div className="mt-5 flex items-center justify-between">
         <button
           type="button"
-          onClick={() => (stage === 0 ? setPhase("profile") : setStage((s) => s - 1))}
+          onClick={goBack}
           className="-ml-1 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
           aria-label="Back"
         >
@@ -269,12 +324,20 @@ export function OnboardingScreen() {
   );
 }
 
-function PersonalityReveal({ personality, onEnter }: { personality: Personality; onEnter: () => void }) {
+function PersonalityReveal({
+  personality,
+  onEnter,
+  editMode = false,
+}: {
+  personality: Personality;
+  onEnter: () => void;
+  editMode?: boolean;
+}) {
   return (
     <div className="phone-shell mx-auto flex min-h-screen max-w-md flex-col bg-paper px-7 pt-safe-top">
       <div className="flex flex-1 flex-col justify-center">
         <p className="animate-in fade-in text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground duration-500">
-          We think we know your type.
+          {editMode ? "Your reader type, refreshed." : "We think we know your type."}
         </p>
         <h1
           className="mt-6 animate-in fade-in slide-in-from-bottom-2 text-[38px] leading-[1.08] font-semibold text-ink duration-500"
@@ -298,7 +361,7 @@ function PersonalityReveal({ personality, onEnter }: { personality: Personality;
           onClick={onEnter}
           className="h-13 w-full rounded-xl bg-ink py-4 text-base font-medium text-paper hover:bg-ink/90"
         >
-          Enter Circle
+          {editMode ? "Back to profile" : "Enter Circle"}
         </Button>
       </div>
     </div>

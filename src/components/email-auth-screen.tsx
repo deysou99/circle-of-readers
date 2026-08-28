@@ -22,15 +22,17 @@ export function EmailAuthScreen() {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: `${window.location.origin}/verify-email` },
       });
       setLoading(false);
       if (error) {
         toast.error(error.message);
+      } else if (data.user && !data.user.email_confirmed_at) {
+        toast.success("Account created. Confirm your email to continue.");
+        navigate({ to: "/verify-email" });
       } else if (data.session) {
         navigate({ to: "/onboarding" });
       } else {
-        toast.success("Account created. Check your email to confirm, then sign in.");
         setMode("signin");
       }
     } else {
@@ -39,6 +41,10 @@ export function EmailAuthScreen() {
       if (error) {
         toast.error(error.message);
       } else if (data.session) {
+        if (!data.user?.email_confirmed_at && (data.user?.app_metadata?.provider ?? "email") === "email") {
+          navigate({ to: "/verify-email" });
+          return;
+        }
         // /onboarding resumes an incomplete flow, or forwards to /home.
         navigate({ to: "/onboarding" });
       }

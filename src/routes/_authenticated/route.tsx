@@ -12,8 +12,15 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
+    // Email sign-ups must confirm their address before entering the app.
+    const provider = data.user.app_metadata?.provider;
+    const emailOnly = !provider || provider === "email";
+    if (emailOnly && !data.user.email_confirmed_at && !data.user.confirmed_at) {
+      throw redirect({ to: "/verify-email" });
+    }
     return { user: data.user };
   },
+
   component: AuthenticatedLayout,
 });
 

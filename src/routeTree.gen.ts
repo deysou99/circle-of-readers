@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AuthenticatedBooksRouteImport } from './routes/_authenticated.books'
 import { Route as AuthenticatedClubsRouteImport } from './routes/_authenticated/clubs'
 import { Route as AuthenticatedCreatePostRouteImport } from './routes/_authenticated.create-post'
@@ -21,7 +22,6 @@ import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated.messages'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated.notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
-import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated.profile'
 import { Route as AuthEmailRouteImport } from './routes/auth.email'
 import { Route as GoodreadsCallbackRouteImport } from './routes/goodreads.callback'
 import { Route as AuthenticatedBooksIdRouteImport } from './routes/_authenticated.books.$id'
@@ -29,6 +29,8 @@ import { Route as AuthenticatedClubsIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedJournalSlugRouteImport } from './routes/_authenticated.journal.$slug'
 import { Route as AuthenticatedMessagesIdRouteImport } from './routes/_authenticated.messages.$id'
 import { Route as AuthenticatedPostsIdRouteImport } from './routes/_authenticated.posts.$id'
+import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated.profile.index'
+import { Route as AuthenticatedProfileReaderAnswersRouteImport } from './routes/_authenticated.profile.reader-answers'
 import { Route as AuthenticatedProfileSettingsRouteImport } from './routes/_authenticated.profile.settings'
 import { Route as AuthenticatedReadersIdRouteImport } from './routes/_authenticated.readers.$id'
 import { Route as AuthenticatedClubsIdChatRouteImport } from './routes/_authenticated.clubs.$id.chat'
@@ -50,6 +52,11 @@ const AuthRoute = AuthRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedBooksRoute = AuthenticatedBooksRouteImport.update({
@@ -93,11 +100,6 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthEmailRoute = AuthEmailRouteImport.update({
   id: '/email',
   path: '/email',
@@ -134,11 +136,23 @@ const AuthenticatedPostsIdRoute = AuthenticatedPostsIdRouteImport.update({
   path: '/posts/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProfileIndexRoute =
+  AuthenticatedProfileIndexRouteImport.update({
+    id: '/profile/',
+    path: '/profile/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProfileReaderAnswersRoute =
+  AuthenticatedProfileReaderAnswersRouteImport.update({
+    id: '/profile/reader-answers',
+    path: '/profile/reader-answers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProfileSettingsRoute =
   AuthenticatedProfileSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedProfileRoute,
+    id: '/profile/settings',
+    path: '/profile/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedReadersIdRoute = AuthenticatedReadersIdRouteImport.update({
   id: '/readers/$id',
@@ -156,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/books': typeof AuthenticatedBooksRouteWithChildren
   '/clubs': typeof AuthenticatedClubsRouteWithChildren
   '/create-post': typeof AuthenticatedCreatePostRoute
@@ -164,7 +179,6 @@ export interface FileRoutesByFullPath {
   '/messages': typeof AuthenticatedMessagesRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
-  '/profile': typeof AuthenticatedProfileRouteWithChildren
   '/auth/email': typeof AuthEmailRoute
   '/goodreads/callback': typeof GoodreadsCallbackRoute
   '/books/$id': typeof AuthenticatedBooksIdRoute
@@ -172,14 +186,17 @@ export interface FileRoutesByFullPath {
   '/journal/$slug': typeof AuthenticatedJournalSlugRoute
   '/messages/$id': typeof AuthenticatedMessagesIdRoute
   '/posts/$id': typeof AuthenticatedPostsIdRoute
+  '/profile/reader-answers': typeof AuthenticatedProfileReaderAnswersRoute
   '/profile/settings': typeof AuthenticatedProfileSettingsRoute
   '/readers/$id': typeof AuthenticatedReadersIdRoute
+  '/profile/': typeof AuthenticatedProfileIndexRoute
   '/clubs/$id/chat': typeof AuthenticatedClubsIdChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/books': typeof AuthenticatedBooksRouteWithChildren
   '/clubs': typeof AuthenticatedClubsRouteWithChildren
   '/create-post': typeof AuthenticatedCreatePostRoute
@@ -188,7 +205,6 @@ export interface FileRoutesByTo {
   '/messages': typeof AuthenticatedMessagesRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
-  '/profile': typeof AuthenticatedProfileRouteWithChildren
   '/auth/email': typeof AuthEmailRoute
   '/goodreads/callback': typeof GoodreadsCallbackRoute
   '/books/$id': typeof AuthenticatedBooksIdRoute
@@ -196,8 +212,10 @@ export interface FileRoutesByTo {
   '/journal/$slug': typeof AuthenticatedJournalSlugRoute
   '/messages/$id': typeof AuthenticatedMessagesIdRoute
   '/posts/$id': typeof AuthenticatedPostsIdRoute
+  '/profile/reader-answers': typeof AuthenticatedProfileReaderAnswersRoute
   '/profile/settings': typeof AuthenticatedProfileSettingsRoute
   '/readers/$id': typeof AuthenticatedReadersIdRoute
+  '/profile': typeof AuthenticatedProfileIndexRoute
   '/clubs/$id/chat': typeof AuthenticatedClubsIdChatRoute
 }
 export interface FileRoutesById {
@@ -206,6 +224,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/_authenticated/books': typeof AuthenticatedBooksRouteWithChildren
   '/_authenticated/clubs': typeof AuthenticatedClubsRouteWithChildren
   '/_authenticated/create-post': typeof AuthenticatedCreatePostRoute
@@ -214,7 +233,6 @@ export interface FileRoutesById {
   '/_authenticated/messages': typeof AuthenticatedMessagesRouteWithChildren
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
-  '/_authenticated/profile': typeof AuthenticatedProfileRouteWithChildren
   '/auth/email': typeof AuthEmailRoute
   '/goodreads/callback': typeof GoodreadsCallbackRoute
   '/_authenticated/books/$id': typeof AuthenticatedBooksIdRoute
@@ -222,8 +240,10 @@ export interface FileRoutesById {
   '/_authenticated/journal/$slug': typeof AuthenticatedJournalSlugRoute
   '/_authenticated/messages/$id': typeof AuthenticatedMessagesIdRoute
   '/_authenticated/posts/$id': typeof AuthenticatedPostsIdRoute
+  '/_authenticated/profile/reader-answers': typeof AuthenticatedProfileReaderAnswersRoute
   '/_authenticated/profile/settings': typeof AuthenticatedProfileSettingsRoute
   '/_authenticated/readers/$id': typeof AuthenticatedReadersIdRoute
+  '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
   '/_authenticated/clubs/$id/chat': typeof AuthenticatedClubsIdChatRoute
 }
 export interface FileRouteTypes {
@@ -232,6 +252,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/verify-email'
     | '/books'
     | '/clubs'
     | '/create-post'
@@ -240,7 +261,6 @@ export interface FileRouteTypes {
     | '/messages'
     | '/notifications'
     | '/onboarding'
-    | '/profile'
     | '/auth/email'
     | '/goodreads/callback'
     | '/books/$id'
@@ -248,14 +268,17 @@ export interface FileRouteTypes {
     | '/journal/$slug'
     | '/messages/$id'
     | '/posts/$id'
+    | '/profile/reader-answers'
     | '/profile/settings'
     | '/readers/$id'
+    | '/profile/'
     | '/clubs/$id/chat'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/verify-email'
     | '/books'
     | '/clubs'
     | '/create-post'
@@ -264,7 +287,6 @@ export interface FileRouteTypes {
     | '/messages'
     | '/notifications'
     | '/onboarding'
-    | '/profile'
     | '/auth/email'
     | '/goodreads/callback'
     | '/books/$id'
@@ -272,8 +294,10 @@ export interface FileRouteTypes {
     | '/journal/$slug'
     | '/messages/$id'
     | '/posts/$id'
+    | '/profile/reader-answers'
     | '/profile/settings'
     | '/readers/$id'
+    | '/profile'
     | '/clubs/$id/chat'
   id:
     | '__root__'
@@ -281,6 +305,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/verify-email'
     | '/_authenticated/books'
     | '/_authenticated/clubs'
     | '/_authenticated/create-post'
@@ -289,7 +314,6 @@ export interface FileRouteTypes {
     | '/_authenticated/messages'
     | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
-    | '/_authenticated/profile'
     | '/auth/email'
     | '/goodreads/callback'
     | '/_authenticated/books/$id'
@@ -297,8 +321,10 @@ export interface FileRouteTypes {
     | '/_authenticated/journal/$slug'
     | '/_authenticated/messages/$id'
     | '/_authenticated/posts/$id'
+    | '/_authenticated/profile/reader-answers'
     | '/_authenticated/profile/settings'
     | '/_authenticated/readers/$id'
+    | '/_authenticated/profile/'
     | '/_authenticated/clubs/$id/chat'
   fileRoutesById: FileRoutesById
 }
@@ -307,6 +333,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   GoodreadsCallbackRoute: typeof GoodreadsCallbackRoute
 }
 
@@ -338,6 +365,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/books': {
@@ -396,13 +430,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/profile': {
-      id: '/_authenticated/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AuthenticatedProfileRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/auth/email': {
       id: '/auth/email'
       path: '/email'
@@ -452,12 +479,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPostsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile/': {
+      id: '/_authenticated/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof AuthenticatedProfileIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/profile/reader-answers': {
+      id: '/_authenticated/profile/reader-answers'
+      path: '/profile/reader-answers'
+      fullPath: '/profile/reader-answers'
+      preLoaderRoute: typeof AuthenticatedProfileReaderAnswersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile/settings': {
       id: '/_authenticated/profile/settings'
-      path: '/settings'
+      path: '/profile/settings'
       fullPath: '/profile/settings'
       preLoaderRoute: typeof AuthenticatedProfileSettingsRouteImport
-      parentRoute: typeof AuthenticatedProfileRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/readers/$id': {
       id: '/_authenticated/readers/$id'
@@ -522,17 +563,6 @@ const AuthenticatedMessagesRouteWithChildren =
     AuthenticatedMessagesRouteChildren,
   )
 
-interface AuthenticatedProfileRouteChildren {
-  AuthenticatedProfileSettingsRoute: typeof AuthenticatedProfileSettingsRoute
-}
-
-const AuthenticatedProfileRouteChildren: AuthenticatedProfileRouteChildren = {
-  AuthenticatedProfileSettingsRoute: AuthenticatedProfileSettingsRoute,
-}
-
-const AuthenticatedProfileRouteWithChildren =
-  AuthenticatedProfileRoute._addFileChildren(AuthenticatedProfileRouteChildren)
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBooksRoute: typeof AuthenticatedBooksRouteWithChildren
   AuthenticatedClubsRoute: typeof AuthenticatedClubsRouteWithChildren
@@ -542,10 +572,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRouteWithChildren
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
-  AuthenticatedProfileRoute: typeof AuthenticatedProfileRouteWithChildren
   AuthenticatedJournalSlugRoute: typeof AuthenticatedJournalSlugRoute
   AuthenticatedPostsIdRoute: typeof AuthenticatedPostsIdRoute
+  AuthenticatedProfileReaderAnswersRoute: typeof AuthenticatedProfileReaderAnswersRoute
+  AuthenticatedProfileSettingsRoute: typeof AuthenticatedProfileSettingsRoute
   AuthenticatedReadersIdRoute: typeof AuthenticatedReadersIdRoute
+  AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -557,10 +589,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMessagesRoute: AuthenticatedMessagesRouteWithChildren,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
-  AuthenticatedProfileRoute: AuthenticatedProfileRouteWithChildren,
   AuthenticatedJournalSlugRoute: AuthenticatedJournalSlugRoute,
   AuthenticatedPostsIdRoute: AuthenticatedPostsIdRoute,
+  AuthenticatedProfileReaderAnswersRoute:
+    AuthenticatedProfileReaderAnswersRoute,
+  AuthenticatedProfileSettingsRoute: AuthenticatedProfileSettingsRoute,
   AuthenticatedReadersIdRoute: AuthenticatedReadersIdRoute,
+  AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -581,6 +616,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   GoodreadsCallbackRoute: GoodreadsCallbackRoute,
 }
 export const routeTree = rootRouteImport
