@@ -150,10 +150,17 @@ export const getOnboardingFunnel = createServerFn({ method: "GET" })
       eventType: e.event_type,
       stageKey: e.stage_key,
       stageIndex: e.stage_index,
+      signupMethod: dimOf(e, "signupMethod"),
+      device: dimOf(e, "device"),
       at: e.created_at,
     }));
 
     return {
+      filters: {
+        applied: { signupMethod: data.signupMethod ?? null, device: data.device ?? null },
+        signupMethods: uniq("signupMethod"),
+        devices: uniq("device"),
+      },
       totals: { sessions, starts, resumes, completions, regenerations, events: rows.length },
       stages,
       resumePoints,
