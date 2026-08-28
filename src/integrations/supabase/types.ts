@@ -311,7 +311,11 @@ export type Database = {
           favorite_genres: string[]
           first_name: string | null
           goodreads_connected: boolean
+          goodreads_last_sync_at: string | null
           goodreads_profile: string | null
+          goodreads_stats: Json
+          goodreads_user_id: string | null
+          goodreads_verified_at: string | null
           id: string
           last_name: string | null
           onboarded: boolean
@@ -333,7 +337,11 @@ export type Database = {
           favorite_genres?: string[]
           first_name?: string | null
           goodreads_connected?: boolean
+          goodreads_last_sync_at?: string | null
           goodreads_profile?: string | null
+          goodreads_stats?: Json
+          goodreads_user_id?: string | null
+          goodreads_verified_at?: string | null
           id?: string
           last_name?: string | null
           onboarded?: boolean
@@ -355,7 +363,11 @@ export type Database = {
           favorite_genres?: string[]
           first_name?: string | null
           goodreads_connected?: boolean
+          goodreads_last_sync_at?: string | null
           goodreads_profile?: string | null
+          goodreads_stats?: Json
+          goodreads_user_id?: string | null
+          goodreads_verified_at?: string | null
           id?: string
           last_name?: string | null
           onboarded?: boolean
@@ -479,7 +491,11 @@ export type Database = {
           favorite_genres: string[]
           first_name: string | null
           goodreads_connected: boolean
+          goodreads_last_sync_at: string | null
           goodreads_profile: string | null
+          goodreads_stats: Json
+          goodreads_user_id: string | null
+          goodreads_verified_at: string | null
           id: string
           last_name: string | null
           onboarded: boolean
