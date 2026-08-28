@@ -15,6 +15,8 @@ export function useOnboardingTracker(editMode = false) {
     [],
   );
 
+  const device = useMemo(() => detectDevice(), []);
+
   return useCallback(
     (eventType: string, stageIndex?: number, metadata?: Record<string, unknown>) => {
       void log({
@@ -22,7 +24,7 @@ export function useOnboardingTracker(editMode = false) {
           sessionId,
           eventType,
           ...(stageIndex === undefined ? {} : { stageIndex, stageKey: STAGE_KEYS[stageIndex] }),
-          metadata: { ...(metadata ?? {}), mode: editMode ? "edit" : "onboarding" },
+          metadata: { ...(metadata ?? {}), device, mode: editMode ? "edit" : "onboarding" },
         },
       }).catch(() => {
         /* analytics must never block the flow */
