@@ -86,10 +86,13 @@ export const getOnboardingProgress = createServerFn({ method: "GET" })
     };
   });
 
+export type FunnelFilters = { signupMethod?: string; device?: string };
+
 /** Aggregated onboarding funnel for the signed-in reader's own events. */
 export const getOnboardingFunnel = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: FunnelFilters | undefined) => input ?? {})
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: events } = await supabase
       .from("onboarding_events")
@@ -98,7 +101,20 @@ export const getOnboardingFunnel = createServerFn({ method: "GET" })
       .order("created_at", { ascending: true })
       .limit(2000);
 
-    const rows = events ?? [];
+    const allRows = events ?? [];
+    const dimOf = (e: (typeof allRows)[number], key: "signupMethod" | "device") => {
+      const meta = (e.metadata ?? {}) as Record<string, unknown>;
+      const value = meta[key];
+      return typeof value === "string" && value ? value : "unknown";
+    };
+    const uniq = (key: "signupMethod" | "device") =>
+      Array.from(new Set(allRows.map((e) => dimOf(e, key)))).sort();
+
+    const rows = allRows.filter(
+      (e) =>
+        (!data.signupMethod || dimOf(e, "signupMethod") === data.signupMethod) &&
+        (!data.device || dimOf(e, "device") === data.device),
+    );
     const stages = STAGE_KEYS.map((key, index) => {
       const viewed = rows.filter((e) => e.event_type === "stage_viewed" && e.stage_index === index).length;
       const completed = rows.filter((e) => e.event_type === "stage_completed" && e.stage_index === index).length;
