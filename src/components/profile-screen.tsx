@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getBooks, getClubs, getMyProfile } from "@/lib/circle.functions";
 import { GoodreadsPanel, type GoodreadsState } from "@/components/goodreads-panel";
+import { ResumeOnboardingBanner } from "@/components/resume-onboarding-banner";
 
 export function ProfileScreen() {
   const fetchProfile = useServerFn(getMyProfile);
@@ -43,6 +44,8 @@ export function ProfileScreen() {
           </Button>
         </Link>
       </header>
+
+      <ResumeOnboardingBanner />
 
       <section className="px-4 pt-6 text-center">
         <Avatar className="mx-auto h-24 w-24 ring-2 ring-primary ring-offset-2 ring-offset-paper">
