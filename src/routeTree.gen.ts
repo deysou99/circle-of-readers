@@ -22,6 +22,7 @@ import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated.messages'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated.notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
+import { Route as AuthIndexRouteImport } from './routes/auth.index'
 import { Route as AuthEmailRouteImport } from './routes/auth.email'
 import { Route as GoodreadsCallbackRouteImport } from './routes/goodreads.callback'
 import { Route as AuthenticatedBooksIdRouteImport } from './routes/_authenticated.books.$id'
@@ -99,6 +100,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthIndexRoute = AuthIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AuthEmailRoute = AuthEmailRouteImport.update({
   id: '/email',
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth/email': typeof AuthEmailRoute
   '/goodreads/callback': typeof GoodreadsCallbackRoute
+  '/auth/': typeof AuthIndexRoute
   '/books/$id': typeof AuthenticatedBooksIdRoute
   '/clubs/$id': typeof AuthenticatedClubsIdRouteWithChildren
   '/journal/$slug': typeof AuthenticatedJournalSlugRoute
@@ -194,7 +201,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
   '/books': typeof AuthenticatedBooksRouteWithChildren
@@ -207,6 +213,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth/email': typeof AuthEmailRoute
   '/goodreads/callback': typeof GoodreadsCallbackRoute
+  '/auth': typeof AuthIndexRoute
   '/books/$id': typeof AuthenticatedBooksIdRoute
   '/clubs/$id': typeof AuthenticatedClubsIdRouteWithChildren
   '/journal/$slug': typeof AuthenticatedJournalSlugRoute
@@ -235,6 +242,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth/email': typeof AuthEmailRoute
   '/goodreads/callback': typeof GoodreadsCallbackRoute
+  '/auth/': typeof AuthIndexRoute
   '/_authenticated/books/$id': typeof AuthenticatedBooksIdRoute
   '/_authenticated/clubs/$id': typeof AuthenticatedClubsIdRouteWithChildren
   '/_authenticated/journal/$slug': typeof AuthenticatedJournalSlugRoute
@@ -263,6 +271,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/email'
     | '/goodreads/callback'
+    | '/auth/'
     | '/books/$id'
     | '/clubs/$id'
     | '/journal/$slug'
@@ -276,7 +285,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/auth'
     | '/reset-password'
     | '/verify-email'
     | '/books'
@@ -289,6 +297,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/email'
     | '/goodreads/callback'
+    | '/auth'
     | '/books/$id'
     | '/clubs/$id'
     | '/journal/$slug'
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/auth/email'
     | '/goodreads/callback'
+    | '/auth/'
     | '/_authenticated/books/$id'
     | '/_authenticated/clubs/$id'
     | '/_authenticated/journal/$slug'
@@ -429,6 +439,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/auth/': {
+      id: '/auth/'
+      path: '/'
+      fullPath: '/auth/'
+      preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/auth/email': {
       id: '/auth/email'
@@ -603,10 +620,12 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface AuthRouteChildren {
   AuthEmailRoute: typeof AuthEmailRoute
+  AuthIndexRoute: typeof AuthIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthEmailRoute: AuthEmailRoute,
+  AuthIndexRoute: AuthIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
