@@ -107,12 +107,23 @@ export const sendPhoneOtp = createServerFn({ method: "POST" })
 
     if (isSmsConfigured()) {
       const sent = await sendSms(phone, `${code} is your Circle verification code. It expires in 10 minutes.`);
-      if (!sent.ok) {
-        throw new Error("We couldn't text that code right now. Try again in a moment.");
+      if (sent.ok) {
+        return {
+          phone,
+          deliveryMode: "sms" as const,
+          expiresInSeconds: CODE_TTL_MS / 1000,
+          cooldownSeconds: RESEND_COOLDOWN_MS / 1000,
+          attemptsLeft: MAX_ATTEMPTS,
+        };
       }
+      // Provider failed: fall back to showing the code in-app. The stored code,
+      // its expiry, the resend cooldown and attempt limit all stay unchanged.
+      console.error(`[otp] SMS delivery failed, falling back to in-app code: ${sent.error ?? "unknown"}`);
       return {
         phone,
-        deliveryMode: "sms" as const,
+        deliveryMode: "in_app" as const,
+        smsFallback: true as const,
+        code,
         expiresInSeconds: CODE_TTL_MS / 1000,
         cooldownSeconds: RESEND_COOLDOWN_MS / 1000,
         attemptsLeft: MAX_ATTEMPTS,

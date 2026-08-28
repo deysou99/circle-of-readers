@@ -86,7 +86,11 @@ export function PhoneVerifyStep({ phone, onBack, onVerified }: Props) {
       setAttemptsLeft(res.attemptsLeft);
       setActivePhone(res.phone);
       if ("code" in res && res.code) {
-        setHint(`SMS delivery isn't switched on yet, so here's your code: ${res.code}`);
+        setHint(
+          "smsFallback" in res && res.smsFallback
+            ? `We couldn't deliver the text just now, so here's your code: ${res.code}`
+            : `SMS delivery isn't switched on yet, so here's your code: ${res.code}`,
+        );
       } else {
         setHint(null);
         toast.success(`Code sent to ${res.phone}`);

@@ -4,6 +4,15 @@ import { logOnboardingEvent } from "@/lib/onboarding.functions";
 
 const STAGE_KEYS = ["curiosity", "places", "after-book", "belonging"] as const;
 
+/** Coarse device bucket used to drill into the onboarding funnel. */
+function detectDevice(): "mobile" | "tablet" | "desktop" {
+  if (typeof navigator === "undefined" || typeof window === "undefined") return "desktop";
+  const ua = navigator.userAgent;
+  if (/iPad|Tablet|PlayBook|Silk|(Android(?!.*Mobile))/i.test(ua)) return "tablet";
+  if (/Mobi|Android|iPhone|iPod/i.test(ua)) return "mobile";
+  return window.innerWidth < 768 ? "mobile" : window.innerWidth < 1024 ? "tablet" : "desktop";
+}
+
 /**
  * Fire-and-forget onboarding funnel analytics. Events are stored in the
  * backend so stage views, completions, drop-offs and resumes can be analysed.
@@ -15,6 +24,8 @@ export function useOnboardingTracker(editMode = false) {
     [],
   );
 
+  const device = useMemo(() => detectDevice(), []);
+
   return useCallback(
     (eventType: string, stageIndex?: number, metadata?: Record<string, unknown>) => {
       void log({
@@ -22,7 +33,7 @@ export function useOnboardingTracker(editMode = false) {
           sessionId,
           eventType,
           ...(stageIndex === undefined ? {} : { stageIndex, stageKey: STAGE_KEYS[stageIndex] }),
-          metadata: { ...(metadata ?? {}), mode: editMode ? "edit" : "onboarding" },
+          metadata: { ...(metadata ?? {}), device, mode: editMode ? "edit" : "onboarding" },
         },
       }).catch(() => {
         /* analytics must never block the flow */

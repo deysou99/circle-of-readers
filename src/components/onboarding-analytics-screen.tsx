@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -21,15 +21,55 @@ const PIE_COLORS = ["hsl(var(--primary))", "#2D4F3C", "#E83227", "#B8B2A4"];
 
 export function OnboardingAnalyticsScreen() {
   const fetchFunnel = useServerFn(getOnboardingFunnel);
+  const [signupMethod, setSignupMethod] = useState<string>("");
+  const [device, setDevice] = useState<string>("");
   const { data, isLoading } = useQuery({
-    queryKey: ["onboarding-funnel"],
-    queryFn: () => fetchFunnel({}),
+    queryKey: ["onboarding-funnel", signupMethod, device],
+    queryFn: () =>
+      fetchFunnel({
+        data: {
+          ...(signupMethod ? { signupMethod } : {}),
+          ...(device ? { device } : {}),
+        },
+      }),
     staleTime: 30_000,
   });
   const [drillStage, setDrillStage] = useState<string | null>(null);
 
   const selected = data?.stages.find((s) => s.key === drillStage) ?? null;
   const stageEvents = (data?.timeline ?? []).filter((e) => !drillStage || e.stageKey === drillStage);
+
+  const exportCsv = () => {
+    if (!data) return;
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines: string[] = [];
+    lines.push("section,key,label,metric,value");
+    Object.entries(data.totals).forEach(([k, v]) =>
+      lines.push(["totals", k, k, "count", v].map(esc).join(",")),
+    );
+    data.stages.forEach((s) => {
+      (["viewed", "completed", "back", "dropOffs", "completionRate"] as const).forEach((m) =>
+        lines.push(["stages", s.key, s.label, m, s[m]].map(esc).join(",")),
+      );
+    });
+    data.resumePoints.forEach((r) =>
+      lines.push(["resumePoints", r.key, r.label, "count", r.count].map(esc).join(",")),
+    );
+    lines.push("");
+    lines.push("section,at,eventType,stageKey,signupMethod,device");
+    data.timeline.forEach((e) =>
+      lines.push(
+        ["events", e.at, e.eventType, e.stageKey ?? "", e.signupMethod, e.device].map(esc).join(","),
+      ),
+    );
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `circle-onboarding-funnel-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-paper pb-10 pt-safe-top">
@@ -40,7 +80,30 @@ export function OnboardingAnalyticsScreen() {
         <h1 className="flex-1 text-lg font-semibold text-ink" style={{ fontFamily: "var(--font-heading)" }}>
           Onboarding funnel
         </h1>
+        <button
+          onClick={exportCsv}
+          disabled={!data}
+          className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-ink disabled:opacity-50"
+        >
+          <Download size={14} /> CSV
+        </button>
       </header>
+
+      <section className="flex flex-wrap gap-2 px-4 pt-4">
+        <FilterSelect
+          label="Signup method"
+          value={signupMethod}
+          onChange={setSignupMethod}
+          options={data?.filters.signupMethods ?? []}
+        />
+        <FilterSelect
+          label="Device"
+          value={device}
+          onChange={setDevice}
+          options={data?.filters.devices ?? []}
+        />
+      </section>
+
 
       {isLoading || !data ? (
         <div className="flex h-40 items-center justify-center">
@@ -155,5 +218,36 @@ function Metric({ label, value }: { label: string; value: number }) {
       </p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+}) {
+  return (
+    <label className="flex items-center gap-2 rounded-full border border-border bg-parchment px-3 py-1.5">
+      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</span>
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="bg-transparent text-xs font-medium text-ink outline-none"
+      >
+        <option value="">All</option>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
