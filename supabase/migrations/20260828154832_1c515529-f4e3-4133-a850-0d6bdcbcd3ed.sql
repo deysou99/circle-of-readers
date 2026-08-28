@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.can_view_club(uuid) FROM anon;

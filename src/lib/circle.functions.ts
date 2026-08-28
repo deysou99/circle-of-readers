@@ -7,11 +7,8 @@ export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const { data } = await supabase.rpc("get_my_profile");
+
 
     const [{ count: followers }, { count: following }, { count: finished }, { count: clubs }] =
       await Promise.all([
@@ -94,9 +91,10 @@ export const getReader = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data: profile } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id, user_id, username, display_name, avatar_url, bio, created_at")
       .eq("user_id", data.userId)
       .maybeSingle();
+
 
     const [{ count: followers }, { count: following }, { data: isFollowing }, { data: posts }] =
       await Promise.all([
@@ -280,13 +278,14 @@ export const getBooks = createServerFn({ method: "GET" })
     const [{ data: books }, { data: shelf }, { data: profile }] = await Promise.all([
       supabase.from("books").select("*").order("title"),
       supabase.from("user_books").select("*").eq("user_id", userId),
-      supabase.from("profiles").select("reading_goal").eq("user_id", userId).maybeSingle(),
+      supabase.rpc("get_my_profile"),
     ]);
     return {
       books: books ?? [],
       shelf: shelf ?? [],
       readingGoal: profile?.reading_goal ?? 30,
     };
+
   });
 
 export const getBookDetail = createServerFn({ method: "GET" })
