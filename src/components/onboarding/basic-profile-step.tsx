@@ -175,28 +175,66 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
             : "Connect Goodreads and bring it with you."}
         </p>
         {goodreadsConnected ? (
-          <div className="mt-4 flex items-center gap-2 text-sm font-medium text-forest">
-            <Check size={16} /> Goodreads connected
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-forest">
+              <Check size={16} /> Goodreads connected
+            </div>
+            {goodreadsUrl && (
+              <p className="truncate text-xs text-muted-foreground">{goodreadsUrl}</p>
+            )}
+            <Button
+              variant="ghost"
+              onClick={() => disconnectMutation.mutate()}
+              disabled={disconnectMutation.isPending}
+              className="h-9 rounded-xl px-0 text-xs text-muted-foreground hover:bg-transparent hover:text-secondary"
+            >
+              {disconnectMutation.isPending ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+              Disconnect
+            </Button>
           </div>
         ) : goodreadsOpen ? (
           <div className="mt-4 space-y-2">
             <Input
               value={goodreadsUrl}
-              onChange={(e) => setGoodreadsUrl(e.target.value)}
+              onChange={(e) => {
+                setGoodreadsUrl(e.target.value);
+                setGoodreadsError("");
+              }}
               placeholder="https://goodreads.com/user/show/…"
               className="h-11 rounded-xl border-input bg-paper"
+              disabled={goodreadsMutation.isPending}
             />
+            {goodreadsError ? (
+              <p className="flex items-start gap-1.5 text-xs text-secondary">
+                <AlertCircle size={13} className="mt-px shrink-0" />
+                {goodreadsError}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Open Goodreads, tap your profile, and paste the link (or just your profile ID).
+              </p>
+            )}
             <div className="flex gap-2">
               <Button
                 onClick={() => goodreadsMutation.mutate()}
-                disabled={goodreadsMutation.isPending}
-                className="h-10 flex-1 rounded-xl bg-ink text-paper hover:bg-ink/90"
+                disabled={goodreadsMutation.isPending || !goodreadsUrl.trim()}
+                className="h-10 flex-1 rounded-xl bg-ink text-paper hover:bg-ink/90 disabled:opacity-40"
               >
-                {goodreadsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save link"}
+                {goodreadsMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying…
+                  </>
+                ) : (
+                  "Save link"
+                )}
               </Button>
               <Button
                 variant="ghost"
-                onClick={() => setGoodreadsOpen(false)}
+                onClick={() => {
+                  setGoodreadsOpen(false);
+                  setGoodreadsError("");
+                }}
+                disabled={goodreadsMutation.isPending}
                 className="h-10 rounded-xl text-muted-foreground"
               >
                 Cancel
@@ -206,14 +244,17 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
         ) : (
           <Button
             variant="outline"
-            onClick={() => setGoodreadsOpen(true)}
+            onClick={() => startMutation.mutate()}
+            disabled={startMutation.isPending}
             className="mt-4 h-11 w-full rounded-xl border-border bg-paper text-ink hover:bg-muted"
           >
+            {startMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Connect Goodreads
           </Button>
         )}
         <p className="mt-3 text-xs text-muted-foreground">Optional — you can do this later.</p>
       </div>
+
 
       <div className="mt-auto pt-8 safe-bottom">
         <Button

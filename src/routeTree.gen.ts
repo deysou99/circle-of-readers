@@ -23,6 +23,7 @@ import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authen
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated.profile'
 import { Route as AuthEmailRouteImport } from './routes/auth.email'
+import { Route as GoodreadsCallbackRouteImport } from './routes/goodreads.callback'
 import { Route as AuthenticatedBooksIdRouteImport } from './routes/_authenticated.books.$id'
 import { Route as AuthenticatedClubsIdRouteImport } from './routes/_authenticated.clubs.$id'
 import { Route as AuthenticatedJournalSlugRouteImport } from './routes/_authenticated.journal.$slug'
@@ -102,6 +103,11 @@ const AuthEmailRoute = AuthEmailRouteImport.update({
   path: '/email',
   getParentRoute: () => AuthRoute,
 } as any)
+const GoodreadsCallbackRoute = GoodreadsCallbackRouteImport.update({
+  id: '/goodreads/callback',
+  path: '/goodreads/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedBooksIdRoute = AuthenticatedBooksIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRouteWithChildren
   '/auth/email': typeof AuthEmailRoute
+  '/goodreads/callback': typeof GoodreadsCallbackRoute
   '/books/$id': typeof AuthenticatedBooksIdRoute
   '/clubs/$id': typeof AuthenticatedClubsIdRouteWithChildren
   '/journal/$slug': typeof AuthenticatedJournalSlugRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRouteWithChildren
   '/auth/email': typeof AuthEmailRoute
+  '/goodreads/callback': typeof GoodreadsCallbackRoute
   '/books/$id': typeof AuthenticatedBooksIdRoute
   '/clubs/$id': typeof AuthenticatedClubsIdRouteWithChildren
   '/journal/$slug': typeof AuthenticatedJournalSlugRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRouteWithChildren
   '/auth/email': typeof AuthEmailRoute
+  '/goodreads/callback': typeof GoodreadsCallbackRoute
   '/_authenticated/books/$id': typeof AuthenticatedBooksIdRoute
   '/_authenticated/clubs/$id': typeof AuthenticatedClubsIdRouteWithChildren
   '/_authenticated/journal/$slug': typeof AuthenticatedJournalSlugRoute
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/auth/email'
+    | '/goodreads/callback'
     | '/books/$id'
     | '/clubs/$id'
     | '/journal/$slug'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/auth/email'
+    | '/goodreads/callback'
     | '/books/$id'
     | '/clubs/$id'
     | '/journal/$slug'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/profile'
     | '/auth/email'
+    | '/goodreads/callback'
     | '/_authenticated/books/$id'
     | '/_authenticated/clubs/$id'
     | '/_authenticated/journal/$slug'
@@ -295,6 +307,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
+  GoodreadsCallbackRoute: typeof GoodreadsCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -396,6 +409,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/email'
       preLoaderRoute: typeof AuthEmailRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/goodreads/callback': {
+      id: '/goodreads/callback'
+      path: '/goodreads/callback'
+      fullPath: '/goodreads/callback'
+      preLoaderRoute: typeof GoodreadsCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/books/$id': {
       id: '/_authenticated/books/$id'
@@ -561,6 +581,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
+  GoodreadsCallbackRoute: GoodreadsCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
