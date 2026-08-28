@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 
 
 interface Props {
-  identity: { email: string; firstName: string; lastName: string; avatarUrl: string };
+  identity: { email: string; firstName: string; lastName: string; avatarUrl: string; phone?: string };
   profile: {
     first_name: string | null;
     last_name: string | null;
@@ -34,7 +34,7 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
   const [firstName, setFirstName] = useState(profile?.first_name ?? identity.firstName ?? "");
   const [lastName, setLastName] = useState(profile?.last_name ?? identity.lastName ?? "");
   const [email, setEmail] = useState(profile?.email ?? identity.email ?? "");
-  const [phone, setPhone] = useState(profile?.phone ?? "");
+  const [phone, setPhone] = useState(profile?.phone ?? identity.phone ?? "");
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [goodreads, setGoodreads] = useState<GoodreadsState>({
     connected: profile?.goodreads_connected ?? false,
@@ -46,7 +46,7 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
 
 
   const emailLocked = isGoogle && !!identity.email;
-  const phoneRequired = !isGoogle;
+  const phoneRequired = true;
 
   const errors = {
     firstName: firstName.trim().length < 1 ? "First name is required" : "",
@@ -149,7 +149,7 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
           )}
         </div>
 
-        {phoneRequired && (
+        {(
           <div className="space-y-1.5">
             <Label htmlFor="phone">Phone number</Label>
             <Input

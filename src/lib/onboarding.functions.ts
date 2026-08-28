@@ -17,6 +17,11 @@ export const getOnboardingState = createServerFn({ method: "GET" })
       firstName: (typeof meta['given_name'] === "string" ? meta['given_name'] : metaFirst) || "",
       lastName: (typeof meta['family_name'] === "string" ? meta['family_name'] : metaRest.join(" ")) || "",
       avatarUrl: typeof meta['avatar_url'] === "string" ? meta['avatar_url'] : "",
+      phone:
+        (typeof claims['phone'] === "string" && claims['phone']) ||
+        (typeof meta['phone'] === "string" && meta['phone']) ||
+        (typeof meta['phone_number'] === "string" ? meta['phone_number'] : "") ||
+        "",
       isGoogle: appMeta['provider'] === "google" || providers.includes("google"),
     };
 
