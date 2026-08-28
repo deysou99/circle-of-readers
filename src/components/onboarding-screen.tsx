@@ -54,6 +54,7 @@ export function OnboardingScreen() {
 
   useEffect(() => {
     if (!data) return;
+    if (phase === "reveal") return;
     if (data.stage === "done") {
       navigate({ to: "/home" });
       return;
