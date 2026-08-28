@@ -46,7 +46,8 @@ async def main() -> int:
         await button.click()
         await page.wait_for_url("**/auth/email", timeout=10_000)
         check("Continue with Email navigates to /auth/email", page.url.endswith("/auth/email"))
-        check("Sign-in form rendered", await page.get_by_label("Email").is_visible())
+        await page.get_by_label("Email").wait_for(state="visible", timeout=10_000)
+        check("Sign-in form rendered", True)
 
         # 2. Back from the email screen returns to /auth (no dead-end).
         await page.get_by_text("← Back").click()
@@ -60,7 +61,8 @@ async def main() -> int:
 
         # 4. Sign up a fresh account and confirm we leave the credentials screen.
         email = f"e2e+{int(time.time())}@circle-e2e.test"
-        await page.get_by_role("button", name="Sign up").click()
+        await page.get_by_role("button", name="Sign up", exact=True).click()
+        await page.wait_for_timeout(500)
         await page.get_by_label("Email").fill(email)
         await page.get_by_label("Password").fill("CircleE2E!2026")
         await page.get_by_role("button", name="Create account").click()
