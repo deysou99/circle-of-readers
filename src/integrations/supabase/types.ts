@@ -221,6 +221,39 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_verifications: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -321,6 +354,8 @@ export type Database = {
           onboarded: boolean
           onboarding_step: number
           phone: string | null
+          phone_verified: boolean
+          phone_verified_at: string | null
           profile_completed: boolean
           reading_goal: number | null
           reading_pace: string | null
@@ -347,6 +382,8 @@ export type Database = {
           onboarded?: boolean
           onboarding_step?: number
           phone?: string | null
+          phone_verified?: boolean
+          phone_verified_at?: string | null
           profile_completed?: boolean
           reading_goal?: number | null
           reading_pace?: string | null
@@ -373,6 +410,8 @@ export type Database = {
           onboarded?: boolean
           onboarding_step?: number
           phone?: string | null
+          phone_verified?: boolean
+          phone_verified_at?: string | null
           profile_completed?: boolean
           reading_goal?: number | null
           reading_pace?: string | null
@@ -501,6 +540,8 @@ export type Database = {
           onboarded: boolean
           onboarding_step: number
           phone: string | null
+          phone_verified: boolean
+          phone_verified_at: string | null
           profile_completed: boolean
           reading_goal: number | null
           reading_pace: string | null

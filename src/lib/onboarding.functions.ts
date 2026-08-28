@@ -30,13 +30,16 @@ export const getOnboardingState = createServerFn({ method: "GET" })
       supabase.from("reader_profiles").select("*").eq("user_id", userId).maybeSingle(),
     ]);
 
+    const phoneVerified = Boolean((profile as { phone_verified?: boolean } | null)?.phone_verified);
     const stage = !profile?.profile_completed
       ? ("profile" as const)
-      : reader?.completed
-        ? ("done" as const)
-        : ("reader" as const);
+      : !phoneVerified
+        ? ("phone" as const)
+        : reader?.completed
+          ? ("done" as const)
+          : ("reader" as const);
 
-    return { identity, profile, reader, stage };
+    return { identity, profile, reader, stage, phoneVerified };
   });
 
 export const saveBasicProfile = createServerFn({ method: "POST" })

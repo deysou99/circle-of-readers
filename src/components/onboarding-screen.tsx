@@ -23,6 +23,7 @@ import {
 } from "@/lib/reader-onboarding";
 import { useOnboardingTracker } from "@/lib/use-onboarding-tracker";
 import { BasicProfileStep } from "@/components/onboarding/basic-profile-step";
+import { PhoneVerifyStep } from "@/components/onboarding/phone-verify-step";
 import {
   CardGroup,
   ChipGroup,
@@ -47,10 +48,11 @@ export function OnboardingScreen({ editMode = false }: { editMode?: boolean } = 
     staleTime: 0,
   });
 
-  const [phase, setPhase] = useState<"loading" | "profile" | "reader" | "reveal">("loading");
+  const [phase, setPhase] = useState<"loading" | "profile" | "phone" | "reader" | "reveal">("loading");
   const [stage, setStage] = useState(0);
   const [answers, setAnswers] = useState<ReaderAnswers>(EMPTY_ANSWERS);
   const [personality, setPersonality] = useState<Personality | null>(null);
+  const [pendingPhone, setPendingPhone] = useState("");
 
   const data = stateQuery.data;
 
@@ -80,7 +82,8 @@ export function OnboardingScreen({ editMode = false }: { editMode?: boolean } = 
     }
     const resume = Math.min(Math.max((data.profile?.onboarding_step ?? 1) - 1, 0), TOTAL_STAGES - 1);
     setStage(resume);
-    setPhase(data.stage === "profile" ? "profile" : "reader");
+    setPhase(data.stage === "profile" ? "profile" : data.stage === "phone" ? "phone" : "reader");
+    if (data.stage === "phone") setPendingPhone(data.profile?.phone ?? "");
     track(resume > 0 || data.stage === "reader" ? "onboarding_resumed" : "onboarding_started", resume, {
       entryStage: data.stage,
     });
@@ -152,7 +155,7 @@ export function OnboardingScreen({ editMode = false }: { editMode?: boolean } = 
         navigate({ to: "/profile/settings" });
         return;
       }
-      setPhase("profile");
+      setPhase(editMode ? "reader" : "profile");
       return;
     }
     track("stage_back", stage);
@@ -175,8 +178,27 @@ export function OnboardingScreen({ editMode = false }: { editMode?: boolean } = 
           identity={data.identity}
           profile={data.profile as never}
           isGoogle={data.identity.isGoogle}
-          onDone={() => {
+          onDone={(savedPhone) => {
             queryClient.invalidateQueries({ queryKey: ["my-profile"] });
+            queryClient.removeQueries({ queryKey: ["onboarding-state"] });
+            setPendingPhone(savedPhone);
+            setPhase("phone");
+            setStage(0);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (phase === "phone") {
+    return (
+      <div className="phone-shell mx-auto min-h-screen max-w-md bg-paper">
+        <PhoneVerifyStep
+          phone={pendingPhone || data?.profile?.phone || ""}
+          onBack={() => setPhase("profile")}
+          onVerified={() => {
+            queryClient.invalidateQueries({ queryKey: ["my-profile"] });
+            queryClient.removeQueries({ queryKey: ["onboarding-state"] });
             setPhase("reader");
             setStage(0);
           }}
