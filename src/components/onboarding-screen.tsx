@@ -72,7 +72,7 @@ export function OnboardingScreen() {
     const resume = Math.min(Math.max((data.profile?.onboarding_step ?? 1) - 1, 0), TOTAL_STAGES - 1);
     setStage(resume);
     setPhase(data.stage === "profile" ? "profile" : "reader");
-  }, [data, navigate]);
+  }, [data, navigate, phase]);
 
   const stageMutation = useMutation({
     mutationFn: (input: { step: number; answers: Partial<ReaderAnswers> }) => persistStage({ data: input }),
