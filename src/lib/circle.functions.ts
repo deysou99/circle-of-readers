@@ -7,7 +7,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data } = await supabase.rpc("get_my_profile").maybeSingle();
+    const { data } = await supabase.rpc("get_my_profile");
 
 
     const [{ count: followers }, { count: following }, { count: finished }, { count: clubs }] =
