@@ -7,6 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { READERS, CLUBS, BOOKS } from "@/lib/seed";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { updateMyProfile } from "@/lib/circle.functions";
+import { toast } from "sonner";
 
 const GENRES = ["Fiction", "Mystery", "Sci-Fi", "Romance", "Non-fiction", "Memoir", "Design", "History"];
 const PACE = ["1-2 books/month", "3-4 books/month", "5+ books/month", "When I can"];
@@ -26,8 +30,30 @@ export function OnboardingScreen() {
     setter(list.includes(item) ? list.filter((i) => i !== item) : [...list, item]);
   }
 
+  const saveProfile = useServerFn(updateMyProfile);
+  const queryClient = useQueryClient();
+
+  const finishMutation = useMutation({
+    mutationFn: () =>
+      saveProfile({
+        data: {
+          ...(name.trim() ? { displayName: name.trim() } : {}),
+          ...(handle.trim() ? { username: handle.trim() } : {}),
+          bio,
+          favoriteGenres: genres,
+          readingPace: pace,
+          onboarded: true,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-profile"] });
+      navigate({ to: "/home" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   function finish() {
-    navigate({ to: "/home" });
+    finishMutation.mutate();
   }
 
   const steps = [
@@ -157,7 +183,7 @@ export function OnboardingScreen() {
             {step === 0 ? "Get Started" : "Continue"} <ArrowRight size={18} className="ml-2" />
           </Button>
         ) : (
-          <Button onClick={finish} className="h-12 w-full rounded-xl bg-forest text-white hover:bg-forest/90">
+          <Button onClick={finish} disabled={finishMutation.isPending} className="h-12 w-full rounded-xl bg-forest text-white hover:bg-forest/90">
             Start Reading <Check size={18} className="ml-2" />
           </Button>
         )}
