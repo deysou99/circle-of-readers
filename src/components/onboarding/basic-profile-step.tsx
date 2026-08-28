@@ -79,13 +79,48 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
 
   const goodreadsMutation = useMutation({
     mutationFn: () => link({ data: { profileUrl: goodreadsUrl } }),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      setGoodreadsUrl(res.profileUrl);
       setGoodreadsConnected(true);
       setGoodreadsOpen(false);
-      toast.success("Goodreads profile saved. We'll import your history once it's available.");
+      setGoodreadsError("");
+      toast.success(
+        res.verified
+          ? "Goodreads profile linked."
+          : "Goodreads profile saved — we couldn't reach it just now, so double-check it's public.",
+      );
+    },
+    onError: (e: Error) => setGoodreadsError(e.message || "Something went wrong. Please try again."),
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: () => unlink({}),
+    onSuccess: () => {
+      setGoodreadsConnected(false);
+      setGoodreadsUrl("");
+      setGoodreadsError("");
+      toast.success("Goodreads disconnected.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const startMutation = useMutation({
+    mutationFn: () => startConnect({}),
+    onSuccess: (res) => {
+      if (res.mode === "oauth" && res.authorizeUrl) {
+        window.location.href = res.authorizeUrl;
+        return;
+      }
+      setGoodreadsOpen(true);
+      setGoodreadsError("");
+      if (res.message) toast.info(res.message);
+    },
+    onError: () => {
+      setGoodreadsOpen(true);
+      setGoodreadsError("We couldn't start the Goodreads connection. Paste your profile link instead.");
+    },
+  });
+
 
   function field(key: keyof typeof errors) {
     return touched[key] && errors[key] ? (
