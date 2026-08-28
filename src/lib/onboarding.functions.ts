@@ -152,49 +152,58 @@ export const completeOnboarding = createServerFn({ method: "POST" })
  * Goodreads stopped issuing developer keys in Dec 2020, so a real OAuth token
  * exchange is not possible for new apps. The flow below keeps the full shape of
  * an OAuth connection (start -> callback -> save) so it can be swapped to a
- * real handshake if access returns: `startGoodreadsConnect` returns the URL the
- * user is sent to, `/goodreads/callback` handles the return, and
- * `connectGoodreads` verifies + persists the connection.
+ * real handshake if access returns: `startGoodreadsConnect` issues a signed
+ * state + nonce, `/goodreads/callback` validates them via
+ * `verifyGoodreadsCallback`, and `connectGoodreads` verifies + persists.
  */
 export const startGoodreadsConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .inputValidator((input: { returnUrl?: string } | undefined) => input ?? {})
+  .handler(async ({ data, context }) => {
+    const { createOAuthState } = await import("@/lib/goodreads.server");
+    const { state, nonce } = createOAuthState(context.userId);
     const key = process.env['GOODREADS_API_KEY'];
     if (!key) {
       return {
         mode: "manual" as const,
         authorizeUrl: null,
+        state,
+        nonce,
         message:
           "Goodreads no longer issues API keys, so we can't authorize automatically. Paste your public profile link instead and we'll verify it.",
       };
     }
+    const redirect = data.returnUrl ? `&oauth_callback=${encodeURIComponent(data.returnUrl)}` : "";
     return {
       mode: "oauth" as const,
-      authorizeUrl: `https://www.goodreads.com/oauth/authorize?mobile=1&key=${encodeURIComponent(key)}`,
+      authorizeUrl: `https://www.goodreads.com/oauth/authorize?mobile=1&key=${encodeURIComponent(key)}&state=${encodeURIComponent(state)}${redirect}`,
+      state,
+      nonce,
       message: null,
     };
   });
 
-function normalizeGoodreadsUrl(input: string): string | null {
-  const raw = input.trim();
-  if (!raw) return null;
-  if (/^\d+(-[\w-]+)?$/.test(raw)) return `https://www.goodreads.com/user/show/${raw}`;
-  const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-  try {
-    const url = new URL(withScheme);
-    if (!/(^|\.)goodreads\.com$/i.test(url.hostname)) return null;
-    if (!/^\/(user|review)\/[\w/-]+/i.test(url.pathname)) return null;
-    return `https://www.goodreads.com${url.pathname}`;
-  } catch {
-    return null;
-  }
-}
+/** Validates the signed state + one-time nonce returned to /goodreads/callback. */
+export const verifyGoodreadsCallback = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { state?: string | null; nonce?: string | null }) => input)
+  .handler(async ({ data, context }) => {
+    const { verifyOAuthState, STATE_FAILURE_MESSAGES } = await import("@/lib/goodreads.server");
+    const result = verifyOAuthState(data.state ?? null, data.nonce ?? null, context.userId);
+    if (result.ok) return { ok: true as const, reason: null, message: null };
+    return {
+      ok: false as const,
+      reason: result.reason,
+      message: STATE_FAILURE_MESSAGES[result.reason],
+    };
+  });
 
 export const connectGoodreads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { profileUrl: string }) => input)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { normalizeGoodreadsUrl, extractGoodreadsUserId } = await import("@/lib/goodreads.server");
     const url = normalizeGoodreadsUrl(data.profileUrl);
     if (!url) {
       throw new Error("That doesn't look like a Goodreads profile. Paste a link like https://www.goodreads.com/user/show/12345-alex");
@@ -214,18 +223,74 @@ export const connectGoodreads = createServerFn({ method: "POST" })
       reachable = false;
     }
 
+    const verifiedAt = new Date().toISOString();
     const { error } = await supabase
       .from("profiles")
       .update({
         goodreads_connected: true,
         goodreads_profile: url,
-        updated_at: new Date().toISOString(),
+        goodreads_user_id: extractGoodreadsUserId(url),
+        goodreads_verified_at: verifiedAt,
+        updated_at: verifiedAt,
       })
       .eq("user_id", userId);
     if (error) throw new Error("We couldn't save your Goodreads link. Please try again.");
 
-    return { ok: true, profileUrl: url, verified: reachable, imported: false as const };
+    return { ok: true, profileUrl: url, verified: reachable, verifiedAt, imported: false as const };
   });
+
+/** Pulls basic reading data from the linked public Goodreads profile. */
+export const syncGoodreads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { extractGoodreadsUserId, fetchGoodreadsSummary } = await import("@/lib/goodreads.server");
+
+    const { data: profile } = await supabase.rpc("get_my_profile");
+    if (!profile?.goodreads_connected || !profile.goodreads_profile) {
+      throw new Error("Connect your Goodreads profile first, then sync.");
+    }
+    const grId = profile.goodreads_user_id ?? extractGoodreadsUserId(profile.goodreads_profile);
+    if (!grId) {
+      throw new Error("We couldn't read a Goodreads user ID from your link. Re-link using your profile URL.");
+    }
+
+    const summary = await fetchGoodreadsSummary(grId);
+    if (!summary) {
+      throw new Error("Goodreads didn't return your books. Make sure your profile and shelves are public, then try again.");
+    }
+
+    const syncedAt = new Date().toISOString();
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        goodreads_user_id: grId,
+        goodreads_last_sync_at: syncedAt,
+        goodreads_stats: summary as never,
+        updated_at: syncedAt,
+      })
+      .eq("user_id", userId);
+    if (error) throw new Error("We synced Goodreads but couldn't save the result. Please try again.");
+
+    // Merge the Goodreads snapshot into the reader profile without clobbering traits.
+    const { data: reader } = await supabase
+      .from("reader_profiles")
+      .select("traits")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const existingTraits = (reader?.traits ?? {}) as Record<string, unknown>;
+    await supabase.from("reader_profiles").upsert(
+      {
+        user_id: userId,
+        traits: { ...existingTraits, goodreads: summary } as never,
+        updated_at: syncedAt,
+      },
+      { onConflict: "user_id" },
+    );
+
+    return { ok: true as const, syncedAt, summary };
+  });
+
 
 export const disconnectGoodreads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -233,9 +298,18 @@ export const disconnectGoodreads = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { error } = await supabase
       .from("profiles")
-      .update({ goodreads_connected: false, goodreads_profile: null, updated_at: new Date().toISOString() })
+      .update({
+        goodreads_connected: false,
+        goodreads_profile: null,
+        goodreads_user_id: null,
+        goodreads_verified_at: null,
+        goodreads_last_sync_at: null,
+        goodreads_stats: {} as never,
+        updated_at: new Date().toISOString(),
+      })
       .eq("user_id", userId);
     if (error) throw new Error("We couldn't disconnect Goodreads. Please try again.");
+
     return { ok: true };
   });
 

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getBooks, getClubs, getMyProfile } from "@/lib/circle.functions";
+import { GoodreadsPanel, type GoodreadsState } from "@/components/goodreads-panel";
 
 export function ProfileScreen() {
   const fetchProfile = useServerFn(getMyProfile);
@@ -23,6 +24,14 @@ export function ProfileScreen() {
   const shelfMap = new Map((booksData?.shelf ?? []).map((s) => [s.book_id, s]));
   const currentlyReading = (booksData?.books ?? []).filter((b) => shelfMap.get(b.id)?.status === "reading");
   const myClubs = clubsData?.myClubs ?? [];
+
+  const goodreadsState: GoodreadsState = {
+    connected: profile?.goodreads_connected ?? false,
+    profileUrl: profile?.goodreads_profile ?? "",
+    verifiedAt: profile?.goodreads_verified_at ?? null,
+    lastSyncAt: profile?.goodreads_last_sync_at ?? null,
+    stats: (profile?.goodreads_stats as GoodreadsState["stats"]) ?? null,
+  };
 
   return (
     <div className="min-h-screen bg-paper pb-6 pt-safe-top">
@@ -87,6 +96,18 @@ export function ProfileScreen() {
               <p className="mt-2 max-w-[80px] truncate text-xs font-medium text-ink">{book.title}</p>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section className="px-4 pt-6">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Goodreads</p>
+        <div className="mt-3">
+          <GoodreadsPanel
+            value={goodreadsState}
+            invalidateKeys={[["my-profile"]]}
+            title="Goodreads connection"
+            subtitle="Keep your Circle reader profile in step with your Goodreads shelves."
+          />
         </div>
       </section>
 
