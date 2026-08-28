@@ -49,7 +49,16 @@ export const updateMyProfile = createServerFn({ method: "POST" })
   }) => input)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const patch: {
+      updated_at: string;
+      display_name?: string;
+      username?: string;
+      bio?: string;
+      favorite_genres?: string[];
+      reading_pace?: string;
+      reading_goal?: number;
+      onboarded?: boolean;
+    } = { updated_at: new Date().toISOString() };
     if (data.displayName !== undefined) patch['display_name'] = data.displayName;
     if (data.username) patch['username'] = data.username.replace(/^@/, "");
     if (data.bio !== undefined) patch['bio'] = data.bio;
