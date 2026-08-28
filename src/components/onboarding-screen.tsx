@@ -69,6 +69,7 @@ export function OnboardingScreen() {
         community_motivations: data.reader.community_motivations ?? [],
       });
     }
+    if (phase !== "loading") return;
     const resume = Math.min(Math.max((data.profile?.onboarding_step ?? 1) - 1, 0), TOTAL_STAGES - 1);
     setStage(resume);
     setPhase(data.stage === "profile" ? "profile" : "reader");
@@ -85,7 +86,7 @@ export function OnboardingScreen() {
       setPersonality(result.personality);
       setPhase("reveal");
       queryClient.invalidateQueries({ queryKey: ["my-profile"] });
-      queryClient.invalidateQueries({ queryKey: ["onboarding-state"] });
+      queryClient.removeQueries({ queryKey: ["onboarding-state"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
