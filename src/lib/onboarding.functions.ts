@@ -272,17 +272,21 @@ export const syncGoodreads = createServerFn({ method: "POST" })
       .eq("user_id", userId);
     if (error) throw new Error("We synced Goodreads but couldn't save the result. Please try again.");
 
-    const genresLike = Object.keys(summary.shelfCounts)
-      .filter((s) => !["read", "currently-reading", "to-read", ""].includes(s))
-      .slice(0, 8);
-    if (genresLike.length) {
-      await supabase
-        .from("reader_profiles")
-        .upsert(
-          { user_id: userId, traits: { goodreads: summary } as never, updated_at: syncedAt },
-          { onConflict: "user_id" },
-        );
-    }
+    // Merge the Goodreads snapshot into the reader profile without clobbering traits.
+    const { data: reader } = await supabase
+      .from("reader_profiles")
+      .select("traits")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const existingTraits = (reader?.traits ?? {}) as Record<string, unknown>;
+    await supabase.from("reader_profiles").upsert(
+      {
+        user_id: userId,
+        traits: { ...existingTraits, goodreads: summary } as never,
+        updated_at: syncedAt,
+      },
+      { onConflict: "user_id" },
+    );
 
     return { ok: true as const, syncedAt, summary };
   });
@@ -294,9 +298,18 @@ export const disconnectGoodreads = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { error } = await supabase
       .from("profiles")
-      .update({ goodreads_connected: false, goodreads_profile: null, updated_at: new Date().toISOString() })
+      .update({
+        goodreads_connected: false,
+        goodreads_profile: null,
+        goodreads_user_id: null,
+        goodreads_verified_at: null,
+        goodreads_last_sync_at: null,
+        goodreads_stats: {} as never,
+        updated_at: new Date().toISOString(),
+      })
       .eq("user_id", userId);
     if (error) throw new Error("We couldn't disconnect Goodreads. Please try again.");
+
     return { ok: true };
   });
 
