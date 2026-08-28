@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -218,5 +218,36 @@ function Metric({ label, value }: { label: string; value: number }) {
       </p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+}) {
+  return (
+    <label className="flex items-center gap-2 rounded-full border border-border bg-parchment px-3 py-1.5">
+      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</span>
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="bg-transparent text-xs font-medium text-ink outline-none"
+      >
+        <option value="">All</option>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
