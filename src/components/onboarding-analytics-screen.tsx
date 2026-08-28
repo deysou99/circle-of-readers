@@ -80,7 +80,30 @@ export function OnboardingAnalyticsScreen() {
         <h1 className="flex-1 text-lg font-semibold text-ink" style={{ fontFamily: "var(--font-heading)" }}>
           Onboarding funnel
         </h1>
+        <button
+          onClick={exportCsv}
+          disabled={!data}
+          className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-ink disabled:opacity-50"
+        >
+          <Download size={14} /> CSV
+        </button>
       </header>
+
+      <section className="flex flex-wrap gap-2 px-4 pt-4">
+        <FilterSelect
+          label="Signup method"
+          value={signupMethod}
+          onChange={setSignupMethod}
+          options={data?.filters.signupMethods ?? []}
+        />
+        <FilterSelect
+          label="Device"
+          value={device}
+          onChange={setDevice}
+          options={data?.filters.devices ?? []}
+        />
+      </section>
+
 
       {isLoading || !data ? (
         <div className="flex h-40 items-center justify-center">
