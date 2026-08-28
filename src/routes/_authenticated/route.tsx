@@ -1,13 +1,14 @@
 import { Outlet, createFileRoute, redirect, useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "@/components/bottom-nav";
 import { useAuth } from "@/contexts/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async ({ context }) => {
-    // Auth state from context is not reliable here because it is React state.
-    // We rely on server functions / client guards for auth, but for route-level
-    // protection we redirect when no user is known. The actual auth check is
-    // enforced by protected server functions.
+  ssr: false,
+  beforeLoad: async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw redirect({ to: "/auth" });
+    return { user: data.user };
   },
   component: AuthenticatedLayout,
 });
