@@ -13,12 +13,20 @@ export function VerifyEmailScreen() {
   const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
+    const pending = sessionStorage.getItem("circle.auth.pending-email");
     supabase.auth.getUser().then(({ data }) => {
       const user = data.user;
       if (!user) {
+        // Signup without an immediate session: keep the reader here with the
+        // address they just used instead of bouncing back to the welcome screen.
+        if (pending) {
+          setEmail(pending);
+          return;
+        }
         navigate({ to: "/auth" });
         return;
       }
+      sessionStorage.removeItem("circle.auth.pending-email");
       setEmail(user.email ?? "");
       if (user.email_confirmed_at) navigate({ to: "/onboarding", replace: true });
     });
@@ -68,6 +76,7 @@ export function VerifyEmailScreen() {
   }
 
   async function useAnotherAccount() {
+    sessionStorage.removeItem("circle.auth.pending-email");
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getFeed, toggleLike } from "@/lib/circle.functions";
+import { ResumeOnboardingBanner } from "@/components/resume-onboarding-banner";
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -59,6 +60,8 @@ export function HomeScreen() {
           </Link>
         </div>
       </header>
+
+      <ResumeOnboardingBanner />
 
       {readers.length > 0 && (
         <section className="flex gap-4 overflow-x-auto border-b border-border px-4 py-4">

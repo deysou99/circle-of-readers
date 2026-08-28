@@ -15,6 +15,8 @@ export const Route = createFileRoute("/_authenticated")({
     // Email sign-ups must confirm their address before entering the app.
     const provider = data.user.app_metadata?.provider;
     const emailOnly = !provider || provider === "email";
+    // A requested email change must be confirmed before the app unlocks again.
+    if (data.user.new_email) throw redirect({ to: "/verify-email" });
     if (emailOnly && !data.user.email_confirmed_at && !data.user.confirmed_at) {
       throw redirect({ to: "/verify-email" });
     }

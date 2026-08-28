@@ -1,10 +1,11 @@
 import { useNavigate, Link } from "@tanstack/react-router";
-import { ArrowLeft, LogOut, Bell, Lock, Moon, User, Shield, Sparkles } from "lucide-react";
+import { ArrowLeft, LogOut, Bell, Lock, Moon, User, Shield, Sparkles, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
+import { ChangeEmailCard, ChangePhoneCard } from "@/components/settings/account-security-cards";
 
 export function ProfileSettingsScreen() {
   const navigate = useNavigate();
@@ -34,8 +35,26 @@ export function ProfileSettingsScreen() {
       </section>
 
       <section className="px-4 pt-6">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sign-in &amp; security</p>
+        <ChangeEmailCard currentEmail={user?.email ?? ""} />
+        <ChangePhoneCard />
+      </section>
+
+      <section className="px-4 pt-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Reader profile</p>
         <div className="mt-2 rounded-2xl border border-border bg-parchment p-2">
+          <Link to="/profile/onboarding-progress" className="block">
+            <div className="flex items-center justify-between px-3 py-3">
+              <div className="flex items-center gap-3">
+                <BarChart3 size={18} className="text-primary" />
+                <div>
+                  <span className="text-sm text-ink">Onboarding progress</span>
+                  <p className="text-xs text-muted-foreground">Completed stages, drop-off point and your next best step</p>
+                </div>
+              </div>
+              <span className="text-muted-foreground">›</span>
+            </div>
+          </Link>
           <Link to="/profile/reader-answers" className="block">
             <div className="flex items-center justify-between px-3 py-3">
               <div className="flex items-center gap-3">
