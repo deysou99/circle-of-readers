@@ -8,6 +8,8 @@ export const getOnboardingState = createServerFn({ method: "GET" })
     const { supabase, userId, claims } = context;
 
     const meta = (claims['user_metadata'] ?? {}) as Record<string, unknown>;
+    const appMeta = (claims['app_metadata'] ?? {}) as Record<string, unknown>;
+    const providers = Array.isArray(appMeta['providers']) ? (appMeta['providers'] as string[]) : [];
     const metaFullName = typeof meta['full_name'] === "string" ? meta['full_name'] : "";
     const [metaFirst = "", ...metaRest] = metaFullName.split(" ");
     const identity = {
@@ -15,9 +17,7 @@ export const getOnboardingState = createServerFn({ method: "GET" })
       firstName: (typeof meta['given_name'] === "string" ? meta['given_name'] : metaFirst) || "",
       lastName: (typeof meta['family_name'] === "string" ? meta['family_name'] : metaRest.join(" ")) || "",
       avatarUrl: typeof meta['avatar_url'] === "string" ? meta['avatar_url'] : "",
-      isGoogle: Array.isArray(claims['amr'])
-        ? false
-        : typeof meta['iss'] === "string" && meta['iss'].includes("google"),
+      isGoogle: appMeta['provider'] === "google" || providers.includes("google"),
     };
 
     const [{ data: profile }, { data: reader }] = await Promise.all([
