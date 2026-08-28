@@ -1,5 +1,5 @@
 import { useNavigate, Link } from "@tanstack/react-router";
-import { ArrowLeft, LogOut, Bell, Lock, Moon, User, Shield } from "lucide-react";
+import { ArrowLeft, LogOut, Bell, Lock, Moon, User, Shield, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +30,24 @@ export function ProfileSettingsScreen() {
         <div className="mt-2 rounded-2xl border border-border bg-parchment p-4">
           <p className="text-sm font-medium text-ink">{user?.email || "you@example.com"}</p>
           <p className="text-xs text-muted-foreground">Signed in with {user?.app_metadata?.provider || "email"}</p>
+        </div>
+      </section>
+
+      <section className="px-4 pt-6">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Reader profile</p>
+        <div className="mt-2 rounded-2xl border border-border bg-parchment p-2">
+          <Link to="/profile/reader-answers" className="block">
+            <div className="flex items-center justify-between px-3 py-3">
+              <div className="flex items-center gap-3">
+                <Sparkles size={18} className="text-primary" />
+                <div>
+                  <span className="text-sm text-ink">Edit reader answers</span>
+                  <p className="text-xs text-muted-foreground">Revisit the four questions and regenerate your reader personality</p>
+                </div>
+              </div>
+              <span className="text-muted-foreground">›</span>
+            </div>
+          </Link>
         </div>
       </section>
 

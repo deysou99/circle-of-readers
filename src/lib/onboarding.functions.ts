@@ -239,3 +239,77 @@ export const disconnectGoodreads = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+
+/* --------------------------- onboarding analytics -------------------------- */
+
+const ONBOARDING_EVENTS = [
+  "onboarding_started",
+  "onboarding_resumed",
+  "profile_step_viewed",
+  "profile_step_completed",
+  "stage_viewed",
+  "stage_completed",
+  "stage_back",
+  "onboarding_completed",
+  "onboarding_abandoned",
+  "personality_regenerated",
+  "edit_answers_started",
+] as const;
+
+export type OnboardingEventType = (typeof ONBOARDING_EVENTS)[number];
+
+export const logOnboardingEvent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    sessionId: string;
+    eventType: string;
+    stageIndex?: number;
+    stageKey?: string;
+    metadata?: Record<string, unknown>;
+  }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    if (!(ONBOARDING_EVENTS as readonly string[]).includes(data.eventType)) {
+      return { ok: false as const };
+    }
+    const { error } = await supabase.from("onboarding_events").insert({
+      user_id: userId,
+      session_id: data.sessionId.slice(0, 64),
+      event_type: data.eventType,
+      stage_index: data.stageIndex ?? null,
+      stage_key: data.stageKey ?? null,
+      metadata: (data.metadata ?? {}) as never,
+    });
+    if (error) return { ok: false as const };
+    return { ok: true as const };
+  });
+
+/** Funnel summary for the signed-in reader: per-stage views, completions and drop-off. */
+export const getOnboardingFunnel = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("onboarding_events")
+      .select("event_type, stage_index, stage_key, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    const rows = data ?? [];
+    const stages = [0, 1, 2, 3].map((i) => ({
+      stageIndex: i,
+      views: rows.filter((r) => r.event_type === "stage_viewed" && r.stage_index === i).length,
+      completions: rows.filter((r) => r.event_type === "stage_completed" && r.stage_index === i).length,
+    }));
+    const lastViewed = [...rows].reverse().find((r) => r.event_type === "stage_viewed");
+
+    return {
+      totalEvents: rows.length,
+      stages,
+      resumes: rows.filter((r) => r.event_type === "onboarding_resumed").length,
+      abandons: rows.filter((r) => r.event_type === "onboarding_abandoned").length,
+      completed: rows.some((r) => r.event_type === "onboarding_completed"),
+      dropOffStage: lastViewed?.stage_index ?? null,
+    };
+  });
