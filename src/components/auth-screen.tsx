@@ -1,22 +1,49 @@
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export function AuthScreen() {
   const navigate = useNavigate();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   async function handleGoogle() {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result?.error) {
-      toast.error(result.error.message ?? "Could not sign in with Google");
-      return;
+    if (googleLoading || emailLoading) return;
+    setGoogleLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result?.error) {
+        toast.error(result.error.message ?? "Could not sign in with Google");
+        return;
+      }
+      if (!result?.redirected) {
+        // /onboarding sends already-onboarded members straight to /home.
+        await navigate({ to: "/onboarding", replace: true });
+      }
+    } finally {
+      setGoogleLoading(false);
     }
-    if (!result?.redirected) {
-      // /onboarding sends already-onboarded members straight to /home.
-      navigate({ to: "/onboarding" });
+  }
+
+  async function handleEmail() {
+    if (emailLoading || googleLoading) return;
+    setEmailLoading(true);
+    setEmailError(null);
+    try {
+      await navigate({ to: "/auth/email" });
+    } catch (error) {
+      console.error("[auth] Continue with Email navigation failed", error);
+      setEmailError(
+        error instanceof Error ? error.message : "We couldn't open the email sign-up page.",
+      );
+    } finally {
+      setEmailLoading(false);
     }
   }
 
