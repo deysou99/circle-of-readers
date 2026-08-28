@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Search, Users, BookOpen, User, Newspaper, ChevronRight } from "lucide-react";
+import { Search, Users, BookOpen, User, Newspaper } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BOOKS, CLUBS, READERS, ARTICLES } from "@/lib/seed";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { searchCircle } from "@/lib/circle.functions";
+import { ARTICLES } from "@/lib/seed";
 
 const CATEGORIES = [
   { label: "Books", icon: BookOpen },
@@ -15,6 +18,12 @@ const CATEGORIES = [
 export function DiscoverScreen() {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState("Books");
+  const search = useServerFn(searchCircle);
+
+  const { data } = useQuery({
+    queryKey: ["discover", query],
+    queryFn: () => search({ data: { query } }),
+  });
 
   return (
     <div className="min-h-screen bg-paper pb-6 pt-safe-top">
@@ -47,13 +56,13 @@ export function DiscoverScreen() {
       <main className="px-4">
         {active === "Books" && (
           <>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Trending Books</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Books</p>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              {BOOKS.map((book) => (
+              {(data?.books ?? []).map((book) => (
                 <Link key={book.id} to="/books/$id" params={{ id: book.id }} className="rounded-2xl border border-border bg-parchment p-3 transition-colors hover:border-primary/30">
-                  <img src={book.cover} alt={book.title} className="aspect-[2/3] w-full rounded-lg object-cover" />
-                  <p className="mt-2 line-clamp-1 text-sm font-semibold text-ink">{book.title}</p>
-                  <p className="line-clamp-1 text-xs text-muted-foreground">{book.author}</p>
+                  {book.cover_url && <img src={book.cover_url} alt={book.title} className="mx-auto h-32 w-22 rounded-lg object-cover" />}
+                  <p className="mt-2 line-clamp-1 text-xs font-medium text-ink">{book.title}</p>
+                  <p className="line-clamp-1 text-[11px] text-muted-foreground">{book.author}</p>
                 </Link>
               ))}
             </div>
@@ -62,19 +71,18 @@ export function DiscoverScreen() {
 
         {active === "Clubs" && (
           <>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Popular Circles</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Circles</p>
             <div className="mt-3 space-y-3">
-              {CLUBS.map((club) => (
+              {(data?.clubs ?? []).map((club) => (
                 <Link key={club.id} to="/clubs/$id" params={{ id: club.id }} className="flex items-center gap-3 rounded-2xl border border-border bg-parchment p-3">
                   <Avatar className="h-12 w-12 rounded-xl">
-                    <AvatarImage src={club.avatar} />
+                    <AvatarImage src={club.avatar_url ?? undefined} />
                     <AvatarFallback>{club.name.slice(0, 2)}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-ink">{club.name}</p>
-                    <p className="text-xs text-muted-foreground">{club.members.toLocaleString()} members • {club.category}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-ink">{club.name}</p>
+                    <p className="text-xs text-muted-foreground">{(club.member_count ?? 0).toLocaleString()} members • {club.category}</p>
                   </div>
-                  <ChevronRight size={18} className="text-muted-foreground" />
                 </Link>
               ))}
             </div>
@@ -83,21 +91,21 @@ export function DiscoverScreen() {
 
         {active === "People" && (
           <>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Readers to Follow</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Readers</p>
             <div className="mt-3 space-y-3">
-              {READERS.slice(1).map((reader) => (
-                <div key={reader.id} className="flex items-center gap-3 rounded-2xl border border-border bg-parchment p-3">
+              {(data?.people ?? []).map((r) => (
+                <Link key={r.user_id} to="/readers/$id" params={{ id: r.user_id }} className="flex items-center gap-3 rounded-2xl border border-border bg-parchment p-3">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={reader.avatar} />
-                    <AvatarFallback>{reader.name.slice(0, 2)}</AvatarFallback>
+                    <AvatarImage src={r.avatar_url ?? undefined} />
+                    <AvatarFallback>{(r.display_name ?? r.username).slice(0, 2)}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-ink">{reader.name}</p>
-                    <p className="text-xs text-muted-foreground">{reader.bio}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-ink">{r.display_name ?? r.username}</p>
+                    <p className="truncate text-xs text-muted-foreground">@{r.username}</p>
                   </div>
-                  <button className="rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">Follow</button>
-                </div>
+                </Link>
               ))}
+              {(data?.people ?? []).length === 0 && <p className="text-sm text-muted-foreground">No readers found.</p>}
             </div>
           </>
         )}
@@ -105,15 +113,11 @@ export function DiscoverScreen() {
         {active === "Journal" && (
           <>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Circle Journal</p>
-            <div className="mt-3 space-y-4">
-              {ARTICLES.map((article) => (
-                <Link key={article.slug} to="/journal/$slug" params={{ slug: article.slug }} className="block overflow-hidden rounded-2xl border border-border bg-parchment">
-                  <img src={article.image} alt={article.title} className="h-40 w-full object-cover" />
-                  <div className="p-4">
-                    <p className="text-base font-semibold text-ink" style={{ fontFamily: "var(--font-heading)" }}>{article.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{article.subtitle}</p>
-                    <p className="mt-2 text-xs text-muted-foreground">{article.readTime} read</p>
-                  </div>
+            <div className="mt-3 space-y-3">
+              {ARTICLES.map((a) => (
+                <Link key={a.slug} to="/journal/$slug" params={{ slug: a.slug }} className="block rounded-2xl border border-border bg-parchment p-3">
+                  <p className="text-sm font-medium text-ink">{a.title}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{a.subtitle}</p>
                 </Link>
               ))}
             </div>

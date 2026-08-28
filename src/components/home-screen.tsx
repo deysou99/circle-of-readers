@@ -1,22 +1,48 @@
 import { Link } from "@tanstack/react-router";
-import { Bell, Plus, Heart, MessageCircle, Bookmark } from "lucide-react";
+import { Bell, Plus, Heart, MessageCircle, BookOpen } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { POSTS, READERS, getBook, getClub } from "@/lib/seed";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getFeed, toggleLike } from "@/lib/circle.functions";
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.round(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+}
 
 export function HomeScreen() {
-  const stories = READERS.slice(1, 6);
+  const fetchFeed = useServerFn(getFeed);
+  const like = useServerFn(toggleLike);
+  const queryClient = useQueryClient();
+
+  const { data: posts, isLoading } = useQuery({
+    queryKey: ["feed"],
+    queryFn: () => fetchFeed(),
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: (postId: string) => like({ data: { postId } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["feed"] }),
+  });
+
+  const readers = (posts ?? [])
+    .map((p) => p.author)
+    .filter((a): a is NonNullable<typeof a> => !!a)
+    .filter((a, i, arr) => arr.findIndex((x) => x.user_id === a.user_id) === i)
+    .slice(0, 6);
 
   return (
     <div className="min-h-screen bg-paper pb-6 pt-safe-top">
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-paper/95 px-4 py-3 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            </svg>
+            <BookOpen size={18} />
           </div>
           <span className="text-lg font-semibold text-ink" style={{ fontFamily: "var(--font-heading)" }}>Circle</span>
         </div>
@@ -34,106 +60,87 @@ export function HomeScreen() {
         </div>
       </header>
 
-      <section className="flex gap-4 overflow-x-auto border-b border-border px-4 py-4">
-        <div className="flex flex-col items-center gap-1.5">
-          <div className="relative">
-            <Avatar className="h-16 w-16 ring-2 ring-primary ring-offset-2 ring-offset-paper">
-              <AvatarImage src={READERS[0]?.avatar} />
-              <AvatarFallback>YO</AvatarFallback>
-            </Avatar>
-            <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">+</div>
-          </div>
-          <span className="text-[11px] text-ink">Your story</span>
-        </div>
-        {stories.map((r) => (
-          <div key={r.id} className="flex flex-col items-center gap-1.5">
-            <Avatar className="h-16 w-16 ring-2 ring-border ring-offset-2 ring-offset-paper">
-              <AvatarImage src={r.avatar} />
-              <AvatarFallback>{r.name.slice(0, 2)}</AvatarFallback>
-            </Avatar>
-            <span className="max-w-[64px] truncate text-[11px] text-ink">{r.handle}</span>
-          </div>
-        ))}
-      </section>
+      {readers.length > 0 && (
+        <section className="flex gap-4 overflow-x-auto border-b border-border px-4 py-4">
+          {readers.map((r) => (
+            <Link key={r.user_id} to="/readers/$id" params={{ id: r.user_id }} className="flex flex-col items-center gap-1.5">
+              <Avatar className="h-16 w-16 ring-2 ring-border ring-offset-2 ring-offset-paper">
+                <AvatarImage src={r.avatar_url ?? undefined} />
+                <AvatarFallback>{(r.display_name ?? r.username).slice(0, 2)}</AvatarFallback>
+              </Avatar>
+              <span className="max-w-[64px] truncate text-[11px] text-ink">{r.username}</span>
+            </Link>
+          ))}
+        </section>
+      )}
 
       <main className="space-y-4 px-4 pt-4">
-        {POSTS.map((post) => (
-          <PostCard key={post.id} post={post} />
+        {isLoading && <p className="pt-8 text-center text-sm text-muted-foreground">Loading your feed…</p>}
+        {!isLoading && (posts ?? []).length === 0 && (
+          <div className="rounded-2xl border border-dashed border-border bg-parchment p-8 text-center">
+            <p className="text-sm font-medium text-ink">Your feed is quiet</p>
+            <p className="mt-1 text-xs text-muted-foreground">Share your first reading update to get the conversation going.</p>
+            <Link to="/create-post">
+              <Button className="mt-4 h-10 rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90">Write a post</Button>
+            </Link>
+          </div>
+        )}
+        {(posts ?? []).map((post) => (
+          <article key={post.id} className="rounded-2xl border border-border bg-parchment p-4">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={post.author?.avatar_url ?? undefined} />
+                <AvatarFallback>{(post.author?.display_name ?? post.author?.username ?? "R").slice(0, 2)}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <Link to="/readers/$id" params={{ id: post.user_id }} className="text-sm font-semibold text-ink hover:text-primary">
+                  {post.author?.display_name ?? post.author?.username ?? "Reader"}
+                </Link>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span>@{post.author?.username ?? "reader"}</span>
+                  <span>•</span>
+                  <span>{timeAgo(post.created_at)}</span>
+                  {post.clubs && (
+                    <>
+                      <span>•</span>
+                      <Link to="/clubs/$id" params={{ id: post.clubs.id }} className="hover:text-primary">{post.clubs.name}</Link>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <Link to="/posts/$id" params={{ id: post.id }}>
+              <p className="mt-3 text-[15px] leading-relaxed text-ink">{post.content}</p>
+            </Link>
+
+            {post.books && (
+              <Link to="/books/$id" params={{ id: post.books.id }} className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-paper p-2">
+                {post.books.cover_url && <img src={post.books.cover_url} alt={post.books.title} className="h-14 w-10 rounded object-cover" />}
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-ink">{post.books.title}</p>
+                  <p className="text-xs text-muted-foreground">{post.books.author}</p>
+                </div>
+                {post.rating ? <div className="pr-2 text-sm font-semibold text-primary">{post.rating}★</div> : null}
+              </Link>
+            )}
+
+            <div className="mt-4 flex items-center gap-4">
+              <button
+                onClick={() => likeMutation.mutate(post.id)}
+                className={`flex items-center gap-1 text-sm ${post.liked ? "text-secondary" : "text-muted-foreground"}`}
+              >
+                <Heart size={18} fill={post.liked ? "currentColor" : "none"} />
+                <span>{post.likes_count ?? 0}</span>
+              </button>
+              <Link to="/posts/$id" params={{ id: post.id }} className="flex items-center gap-1 text-sm text-muted-foreground">
+                <MessageCircle size={18} />
+                <span>{post.comments_count ?? 0}</span>
+              </Link>
+            </div>
+          </article>
         ))}
       </main>
     </div>
-  );
-}
-
-function PostCard({ post }: { post: typeof POSTS[0] }) {
-  const [liked, setLiked] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const book = post.bookId ? getBook(post.bookId) : null;
-  const club = post.clubId ? getClub(post.clubId) : null;
-
-  return (
-    <article className="rounded-2xl border border-border bg-parchment p-4">
-      <div className="flex items-center gap-3">
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={post.authorAvatar} />
-          <AvatarFallback>{post.authorName.slice(0, 2)}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1">
-          <Link to="/readers/$id" params={{ id: post.authorId }} className="text-sm font-semibold text-ink hover:text-primary">
-            {post.authorName}
-          </Link>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <span>@{post.authorHandle}</span>
-            <span>•</span>
-            <span>{post.createdAt}</span>
-            {club && (
-              <>
-                <span>•</span>
-                <Link to="/clubs/$id" params={{ id: club.id }} className="hover:text-primary">
-                  {club.name}
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <Link to="/posts/$id" params={{ id: post.id }}>
-        <p className="mt-3 text-[15px] leading-relaxed text-ink">{post.content}</p>
-      </Link>
-
-      {book && (
-        <div className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-paper p-2">
-          <img src={book.cover} alt={book.title} className="h-14 w-10 rounded object-cover" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-ink">{book.title}</p>
-            <p className="text-xs text-muted-foreground">{book.author}</p>
-          </div>
-          {post.rating && (
-            <div className="pr-2 text-sm font-semibold text-primary">{post.rating}★</div>
-          )}
-        </div>
-      )}
-
-      {post.image && (
-        <img src={post.image} alt="Post" className="mt-3 w-full rounded-xl object-cover" />
-      )}
-
-      <div className="mt-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => setLiked((v) => !v)} className={`flex items-center gap-1 text-sm ${liked ? "text-secondary" : "text-muted-foreground"}`}>
-            <Heart size={18} fill={liked ? "currentColor" : "none"} />
-            <span>{post.likes + (liked ? 1 : 0)}</span>
-          </button>
-          <Link to="/posts/$id" params={{ id: post.id }} className="flex items-center gap-1 text-sm text-muted-foreground">
-            <MessageCircle size={18} />
-            <span>{post.comments}</span>
-          </Link>
-        </div>
-        <button onClick={() => setSaved((v) => !v)} className={`${saved ? "text-primary" : "text-muted-foreground"}`}>
-          <Bookmark size={18} fill={saved ? "currentColor" : "none"} />
-        </button>
-      </div>
-    </article>
   );
 }
