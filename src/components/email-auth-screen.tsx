@@ -39,7 +39,8 @@ export function EmailAuthScreen() {
       if (error) {
         toast.error(error.message);
       } else if (data.session) {
-        navigate({ to: "/home" });
+        // /onboarding resumes an incomplete flow, or forwards to /home.
+        navigate({ to: "/onboarding" });
       }
     }
   }
