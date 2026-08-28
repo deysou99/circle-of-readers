@@ -4,9 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { connectGoodreads, saveBasicProfile } from "@/lib/onboarding.functions";
+import {
+  connectGoodreads,
+  disconnectGoodreads,
+  saveBasicProfile,
+  startGoodreadsConnect,
+} from "@/lib/onboarding.functions";
 import { toast } from "sonner";
-import { Check, Loader2 } from "lucide-react";
+import { AlertCircle, Check, Loader2 } from "lucide-react";
+
 
 interface Props {
   identity: { email: string; firstName: string; lastName: string; avatarUrl: string };
