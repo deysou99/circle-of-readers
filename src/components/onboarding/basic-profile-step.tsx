@@ -46,13 +46,12 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
 
 
   const emailLocked = isGoogle && !!identity.email;
-  const phoneRequired = true;
 
   const errors = {
     firstName: firstName.trim().length < 1 ? "First name is required" : "",
     lastName: lastName.trim().length < 1 ? "Last name is required" : "",
     email: !EMAIL_RE.test(email.trim()) ? "Enter a valid email address" : "",
-    phone: phoneRequired && !PHONE_RE.test(phone.trim()) ? "Enter a valid phone number" : "",
+    phone: !PHONE_RE.test(phone.trim()) ? "Enter a valid phone number" : "",
   };
   const valid = !Object.values(errors).some(Boolean);
 
@@ -149,8 +148,7 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
           )}
         </div>
 
-        {(
-          <div className="space-y-1.5">
+        <div className="space-y-1.5">
             <Label htmlFor="phone">Phone number</Label>
             <Input
               id="phone"
@@ -163,8 +161,7 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
               placeholder="+1 555 0134"
             />
             {field("phone")}
-          </div>
-        )}
+        </div>
       </div>
 
       <div className="mt-7">
