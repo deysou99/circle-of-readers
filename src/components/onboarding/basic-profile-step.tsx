@@ -40,6 +40,8 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
   const [goodreadsOpen, setGoodreadsOpen] = useState(false);
   const [goodreadsUrl, setGoodreadsUrl] = useState(profile?.goodreads_profile ?? "");
   const [goodreadsConnected, setGoodreadsConnected] = useState(profile?.goodreads_connected ?? false);
+  const [goodreadsError, setGoodreadsError] = useState("");
+
 
   const emailLocked = isGoogle && !!identity.email;
   const phoneRequired = !isGoogle;
