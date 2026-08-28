@@ -56,6 +56,9 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
 
   const save = useServerFn(saveBasicProfile);
   const link = useServerFn(connectGoodreads);
+  const unlink = useServerFn(disconnectGoodreads);
+  const startConnect = useServerFn(startGoodreadsConnect);
+
 
   const saveMutation = useMutation({
     mutationFn: () =>
