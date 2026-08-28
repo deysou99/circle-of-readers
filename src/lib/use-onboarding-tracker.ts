@@ -4,6 +4,15 @@ import { logOnboardingEvent } from "@/lib/onboarding.functions";
 
 const STAGE_KEYS = ["curiosity", "places", "after-book", "belonging"] as const;
 
+/** Coarse device bucket used to drill into the onboarding funnel. */
+function detectDevice(): "mobile" | "tablet" | "desktop" {
+  if (typeof navigator === "undefined" || typeof window === "undefined") return "desktop";
+  const ua = navigator.userAgent;
+  if (/iPad|Tablet|PlayBook|Silk|(Android(?!.*Mobile))/i.test(ua)) return "tablet";
+  if (/Mobi|Android|iPhone|iPod/i.test(ua)) return "mobile";
+  return window.innerWidth < 768 ? "mobile" : window.innerWidth < 1024 ? "tablet" : "desktop";
+}
+
 /**
  * Fire-and-forget onboarding funnel analytics. Events are stored in the
  * backend so stage views, completions, drop-offs and resumes can be analysed.
