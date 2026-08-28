@@ -167,6 +167,56 @@ export type Database = {
           },
         ]
       }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           book_id: string | null
@@ -224,8 +274,11 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string | null
+          favorite_genres: string[]
           id: string
+          onboarded: boolean
           reading_goal: number | null
+          reading_pace: string | null
           updated_at: string
           user_id: string
           username: string
@@ -235,8 +288,11 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          favorite_genres?: string[]
           id?: string
+          onboarded?: boolean
           reading_goal?: number | null
+          reading_pace?: string | null
           updated_at?: string
           user_id: string
           username: string
@@ -246,13 +302,57 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          favorite_genres?: string[]
           id?: string
+          onboarded?: boolean
           reading_goal?: number | null
+          reading_pace?: string | null
           updated_at?: string
           user_id?: string
           username?: string
         }
         Relationships: []
+      }
+      user_books: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          progress: number
+          rating: number | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          progress?: number
+          rating?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          progress?: number
+          rating?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_books_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
