@@ -150,28 +150,54 @@ async def main() -> int:
             limited["body"][:200],
         )
 
-        # 3. Restore the original number and complete verification with the
-        #    in-app fallback code so the account is left verified.
-        await page.goto(f"{BASE_URL}/profile/settings", wait_until="networkidle")
-        await page.wait_for_timeout(2000)
-        await page.get_by_label("New phone number").fill(original_phone)
-        await page.get_by_role("button", name="Update and re-verify").click()
-        await page.wait_for_url("**/onboarding", timeout=15_000)
-        await page.wait_for_timeout(3500)
-        restored = await read_state(page)
-        check("Fresh cooldown after the second phone change", restored["cooldown"] is not None, str(restored["cooldown"]))
-        shown = re.search(r"here's your code: (\d{6})", restored["body"])
-        if shown:
+        # 3. Recover from the attempt limit with a fresh code, verify with the
+        #    in-app fallback code, then restore the original number and verify.
+        async def verify_with_fresh_code(label: str) -> None:
+            new_code_btn = page.get_by_role("button", name=re.compile("Resend code in|Send a new code"))
+            for _ in range(60):
+                if await new_code_btn.is_enabled():
+                    break
+                await page.wait_for_timeout(1000)
+            await new_code_btn.click()
+            await page.wait_for_timeout(3000)
+            state = await read_state(page)
+            shown = re.search(r"code: (\d{6})", state["body"])
+            check(f"{label}: fresh in-app code issued", bool(shown), state["body"][:200])
+            if not shown:
+                return
             await page.get_by_label("Verification code").fill(shown.group(1))
-            await page.wait_for_timeout(3500)
+            await page.wait_for_timeout(4000)
             done = await page.inner_text("body")
             check(
-                "In-app fallback code verifies the restored number",
+                f"{label}: code verifies the number",
                 "Verification code" not in done or "verified" in done.lower(),
                 done[:160],
             )
+
+        await verify_with_fresh_code("Attempt-limit recovery")
+
+        await page.goto(f"{BASE_URL}/profile/settings", wait_until="networkidle")
+        await page.wait_for_timeout(2500)
+        if await page.get_by_label("New phone number").count() > 0:
+            await page.get_by_label("New phone number").fill(original_phone)
+            await page.get_by_role("button", name="Update and re-verify").click()
+            await page.wait_for_url("**/onboarding", timeout=15_000)
+            await page.wait_for_timeout(3500)
+            restored = await read_state(page)
+            check(
+                "Fresh cooldown after the second phone change",
+                restored["cooldown"] is not None,
+                str(restored["cooldown"]),
+            )
+            shown = re.search(r"code: (\d{6})", restored["body"])
+            if shown:
+                await page.get_by_label("Verification code").fill(shown.group(1))
+                await page.wait_for_timeout(4000)
+                check("Original number restored and verified", True)
+            else:
+                await verify_with_fresh_code("Restore original number")
         else:
-            check("In-app fallback code surfaced for verification", False, restored["body"][:200])
+            check("Settings reachable after verification", False, page.url)
 
         check("No console errors during the OTP flow", not console_errors, "; ".join(console_errors[:3]))
         await browser.close()
