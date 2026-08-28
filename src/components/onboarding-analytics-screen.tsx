@@ -21,15 +21,55 @@ const PIE_COLORS = ["hsl(var(--primary))", "#2D4F3C", "#E83227", "#B8B2A4"];
 
 export function OnboardingAnalyticsScreen() {
   const fetchFunnel = useServerFn(getOnboardingFunnel);
+  const [signupMethod, setSignupMethod] = useState<string>("");
+  const [device, setDevice] = useState<string>("");
   const { data, isLoading } = useQuery({
-    queryKey: ["onboarding-funnel"],
-    queryFn: () => fetchFunnel({}),
+    queryKey: ["onboarding-funnel", signupMethod, device],
+    queryFn: () =>
+      fetchFunnel({
+        data: {
+          ...(signupMethod ? { signupMethod } : {}),
+          ...(device ? { device } : {}),
+        },
+      }),
     staleTime: 30_000,
   });
   const [drillStage, setDrillStage] = useState<string | null>(null);
 
   const selected = data?.stages.find((s) => s.key === drillStage) ?? null;
   const stageEvents = (data?.timeline ?? []).filter((e) => !drillStage || e.stageKey === drillStage);
+
+  const exportCsv = () => {
+    if (!data) return;
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines: string[] = [];
+    lines.push("section,key,label,metric,value");
+    Object.entries(data.totals).forEach(([k, v]) =>
+      lines.push(["totals", k, k, "count", v].map(esc).join(",")),
+    );
+    data.stages.forEach((s) => {
+      (["viewed", "completed", "back", "dropOffs", "completionRate"] as const).forEach((m) =>
+        lines.push(["stages", s.key, s.label, m, s[m]].map(esc).join(",")),
+      );
+    });
+    data.resumePoints.forEach((r) =>
+      lines.push(["resumePoints", r.key, r.label, "count", r.count].map(esc).join(",")),
+    );
+    lines.push("");
+    lines.push("section,at,eventType,stageKey,signupMethod,device");
+    data.timeline.forEach((e) =>
+      lines.push(
+        ["events", e.at, e.eventType, e.stageKey ?? "", e.signupMethod, e.device].map(esc).join(","),
+      ),
+    );
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `circle-onboarding-funnel-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-paper pb-10 pt-safe-top">
