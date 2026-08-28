@@ -1,192 +1,303 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowRight, Check } from "lucide-react";
-import { READERS, CLUBS, BOOKS } from "@/lib/seed";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { updateMyProfile } from "@/lib/circle.functions";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import {
+  completeOnboarding,
+  getOnboardingState,
+  saveReaderStage,
+} from "@/lib/onboarding.functions";
+import {
+  AFTER_BOOK_OPTIONS,
+  BELONGING_OPTIONS,
+  CONVERSATION_OPTIONS,
+  CURIOSITY_OPTIONS,
+  EMPTY_ANSWERS,
+  INTERRUPTION_OPTIONS,
+  LOCATION_OPTIONS,
+  type Personality,
+  type ReaderAnswers,
+} from "@/lib/reader-onboarding";
+import { BasicProfileStep } from "@/components/onboarding/basic-profile-step";
+import {
+  CardGroup,
+  ChipGroup,
+  SelectionHint,
+  StageHeader,
+  StageProgress,
+} from "@/components/onboarding/reader-stages";
 
-const GENRES = ["Fiction", "Mystery", "Sci-Fi", "Romance", "Non-fiction", "Memoir", "Design", "History"];
-const PACE = ["1-2 books/month", "3-4 books/month", "5+ books/month", "When I can"];
-const WHY = ["Community", "Recommendations", "Tracking", "Challenges"];
+const TOTAL_STAGES = 4;
 
 export function OnboardingScreen() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
-  const [name, setName] = useState("");
-  const [handle, setHandle] = useState("");
-  const [bio, setBio] = useState("");
-  const [genres, setGenres] = useState<string[]>([]);
-  const [pace, setPace] = useState("");
-  const [why, setWhy] = useState<string[]>([]);
-
-  function toggle(list: string[], item: string, setter: (v: string[]) => void) {
-    setter(list.includes(item) ? list.filter((i) => i !== item) : [...list, item]);
-  }
-
-  const saveProfile = useServerFn(updateMyProfile);
   const queryClient = useQueryClient();
+  const fetchState = useServerFn(getOnboardingState);
+  const persistStage = useServerFn(saveReaderStage);
+  const finish = useServerFn(completeOnboarding);
+
+  const stateQuery = useQuery({
+    queryKey: ["onboarding-state"],
+    queryFn: () => fetchState({}),
+    staleTime: 0,
+  });
+
+  const [phase, setPhase] = useState<"loading" | "profile" | "reader" | "reveal">("loading");
+  const [stage, setStage] = useState(0);
+  const [answers, setAnswers] = useState<ReaderAnswers>(EMPTY_ANSWERS);
+  const [personality, setPersonality] = useState<Personality | null>(null);
+
+  const data = stateQuery.data;
+
+  useEffect(() => {
+    if (!data) return;
+    if (data.stage === "done") {
+      navigate({ to: "/home" });
+      return;
+    }
+    if (data.reader) {
+      setAnswers({
+        curiosity_preferences: data.reader.curiosity_preferences ?? [],
+        reading_locations: data.reader.reading_locations ?? [],
+        reading_interruptions: data.reader.reading_interruptions ?? [],
+        post_book_behaviour: data.reader.post_book_behaviour ?? [],
+        conversation_style: data.reader.conversation_style ?? [],
+        community_motivations: data.reader.community_motivations ?? [],
+      });
+    }
+    const resume = Math.min(Math.max((data.profile?.onboarding_step ?? 1) - 1, 0), TOTAL_STAGES - 1);
+    setStage(resume);
+    setPhase(data.stage === "profile" ? "profile" : "reader");
+  }, [data, navigate]);
+
+  const stageMutation = useMutation({
+    mutationFn: (input: { step: number; answers: Partial<ReaderAnswers> }) => persistStage({ data: input }),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const finishMutation = useMutation({
-    mutationFn: () =>
-      saveProfile({
-        data: {
-          ...(name.trim() ? { displayName: name.trim() } : {}),
-          ...(handle.trim() ? { username: handle.trim() } : {}),
-          bio,
-          favoriteGenres: genres,
-          readingPace: pace,
-          onboarded: true,
-        },
-      }),
-    onSuccess: () => {
+    mutationFn: () => finish({ data: { answers } }),
+    onSuccess: (result) => {
+      setPersonality(result.personality);
+      setPhase("reveal");
       queryClient.invalidateQueries({ queryKey: ["my-profile"] });
-      navigate({ to: "/home" });
+      queryClient.invalidateQueries({ queryKey: ["onboarding-state"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  function finish() {
-    finishMutation.mutate();
+  function set<K extends keyof ReaderAnswers>(key: K, value: string[]) {
+    setAnswers((a) => ({ ...a, [key]: value }));
   }
 
-  const steps = [
-    <div key="welcome" className="flex flex-col items-center text-center">
-      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-        </svg>
-      </div>
-      <h2 className="text-2xl font-semibold text-ink" style={{ fontFamily: "var(--font-heading)" }}>Welcome to Circle</h2>
-      <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-        Let's set up your reader profile in four quick steps so we can match you with books, clubs, and readers you'll love.
-      </p>
-    </div>,
+  const canContinue = useMemo(() => {
+    if (stage === 0) return answers.curiosity_preferences.length > 0;
+    if (stage === 1) return answers.reading_locations.length > 0 && answers.reading_interruptions.length > 0;
+    if (stage === 2) return answers.post_book_behaviour.length > 0 && answers.conversation_style.length > 0;
+    return answers.community_motivations.length > 0;
+  }, [stage, answers]);
 
-    <div key="profile" className="space-y-4">
-      <h2 className="text-xl font-semibold text-ink" style={{ fontFamily: "var(--font-heading)" }}>Who are you?</h2>
-      <div className="flex justify-center py-2">
-        <Avatar className="h-20 w-20 ring-2 ring-primary ring-offset-2 ring-offset-paper">
-          <AvatarImage src={READERS[0]?.avatar} />
-          <AvatarFallback>YO</AvatarFallback>
-        </Avatar>
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="name">Display name</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Alex" className="h-12 rounded-xl border-input bg-paper" />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="handle">Handle</Label>
-        <Input id="handle" value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@alexreads" className="h-12 rounded-xl border-input bg-paper" />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="bio">Short bio</Label>
-        <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="What should other readers know about you?" className="min-h-[100px] rounded-xl border-input bg-paper" />
-      </div>
-    </div>,
+  function goNext() {
+    stageMutation.mutate({ step: stage + 2, answers });
+    if (stage === TOTAL_STAGES - 1) {
+      finishMutation.mutate();
+    } else {
+      setStage((s) => s + 1);
+    }
+  }
 
-    <div key="genres" className="space-y-4">
-      <h2 className="text-xl font-semibold text-ink" style={{ fontFamily: "var(--font-heading)" }}>What do you love to read?</h2>
-      <p className="text-sm text-muted-foreground">Pick your favorite genres so we can recommend the right circles.</p>
-      <div className="flex flex-wrap gap-2">
-        {GENRES.map((g) => (
-          <button
-            key={g}
-            onClick={() => toggle(genres, g, setGenres)}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-              genres.includes(g) ? "bg-primary text-primary-foreground" : "border border-border bg-paper text-ink hover:bg-muted"
-            }`}
-          >
-            {g}
-          </button>
-        ))}
+  if (phase === "loading" || stateQuery.isLoading) {
+    return (
+      <div className="phone-shell flex min-h-screen items-center justify-center bg-paper">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
-      <div className="space-y-1.5">
-        <Label>Reading pace</Label>
-        <div className="grid grid-cols-2 gap-2">
-          {PACE.map((p) => (
-            <button
-              key={p}
-              onClick={() => setPace(p)}
-              className={`rounded-xl px-3 py-2.5 text-xs font-medium transition-colors ${
-                pace === p ? "bg-forest text-white" : "border border-border bg-paper text-ink hover:bg-muted"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>,
+    );
+  }
 
-    <div key="why" className="space-y-4">
-      <h2 className="text-xl font-semibold text-ink" style={{ fontFamily: "var(--font-heading)" }}>What brings you to Circle?</h2>
-      <p className="text-sm text-muted-foreground">Select what matters most. You can change this later.</p>
-      <div className="grid grid-cols-2 gap-3">
-        {WHY.map((w) => (
-          <button
-            key={w}
-            onClick={() => toggle(why, w, setWhy)}
-            className={`rounded-2xl border p-4 text-left transition-colors ${
-              why.includes(w) ? "border-primary bg-primary/5 text-ink" : "border-border bg-paper text-ink hover:bg-muted"
-            }`}
-          >
-            <div className={`mb-2 flex h-8 w-8 items-center justify-center rounded-full ${why.includes(w) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-              <Check size={16} />
-            </div>
-            <p className="text-sm font-medium">{w}</p>
-          </button>
-        ))}
+  if (phase === "profile" && data) {
+    return (
+      <div className="phone-shell mx-auto min-h-screen max-w-md bg-paper">
+        <BasicProfileStep
+          identity={data.identity}
+          profile={data.profile as never}
+          isGoogle={!!data.identity.avatarUrl || !!data.identity.email}
+          onDone={() => {
+            queryClient.invalidateQueries({ queryKey: ["my-profile"] });
+            setPhase("reader");
+            setStage(0);
+          }}
+        />
       </div>
-    </div>,
+    );
+  }
 
-    <div key="ready" className="flex flex-col items-center text-center">
-      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-forest text-white shadow-lg shadow-forest/20">
-        <Check size={40} />
-      </div>
-      <h2 className="text-2xl font-semibold text-ink" style={{ fontFamily: "var(--font-heading)" }}>You're all set</h2>
-      <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-        We found {CLUBS.length} circles and {BOOKS.length} books that match your taste. Dive in when you're ready.
-      </p>
-    </div>,
-  ];
+  if (phase === "reveal" && personality) {
+    return <PersonalityReveal personality={personality} onEnter={() => navigate({ to: "/home" })} />;
+  }
 
   return (
-    <div className="phone-shell flex min-h-screen flex-col bg-paper px-6 pt-safe-top">
-      <div className="mt-4 flex items-center justify-between">
-        <div className="flex gap-1">
-          {steps.map((_, i) => (
-            <div key={i} className={`h-1.5 rounded-full transition-all ${i <= step ? "w-6 bg-primary" : "w-2 bg-border"}`} />
-          ))}
-        </div>
-        {step > 0 && step < steps.length - 1 && (
-          <button onClick={() => setStep((s) => Math.max(0, s - 1))} className="text-sm text-muted-foreground hover:text-ink">
-            Back
-          </button>
+    <div className="phone-shell mx-auto flex min-h-screen max-w-md flex-col bg-paper px-6 pt-safe-top">
+      <div className="mt-5 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => (stage === 0 ? setPhase("profile") : setStage((s) => s - 1))}
+          className="-ml-1 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-ink"
+          aria-label="Back"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <StageProgress step={stage} total={TOTAL_STAGES} />
+      </div>
+
+      <div key={stage} className="mt-8 flex-1 animate-in fade-in slide-in-from-right-2 duration-300">
+        {stage === 0 && (
+          <>
+            <StageHeader
+              title="What makes you curious?"
+              copy="Some people chase stories. Some chase ideas. Some accidentally fall down a rabbit hole at 2 AM."
+              question="What could keep you reading long after you should have gone to sleep?"
+            />
+            <div className="mt-6 space-y-3">
+              <ChipGroup
+                options={CURIOSITY_OPTIONS}
+                value={answers.curiosity_preferences}
+                max={5}
+                onChange={(v) => set("curiosity_preferences", v)}
+              />
+              <SelectionHint count={answers.curiosity_preferences.length} max={5} />
+            </div>
+          </>
+        )}
+
+        {stage === 1 && (
+          <>
+            <StageHeader
+              title="Where does your brain like to wander?"
+              copy="There isn't really a right way to read."
+              question="It's 8 PM. You have two free hours. Where are you?"
+            />
+            <div className="mt-5 space-y-3">
+              <CardGroup
+                options={LOCATION_OPTIONS}
+                value={answers.reading_locations}
+                max={2}
+                onChange={(v) => set("reading_locations", v)}
+              />
+              <SelectionHint count={answers.reading_locations.length} max={2} />
+            </div>
+            <div className="mt-9 border-t border-border pt-7">
+              <p className="text-base font-medium text-ink">What's allowed to interrupt your reading?</p>
+              <div className="mt-4">
+                <CardGroup
+                  compact
+                  options={INTERRUPTION_OPTIONS}
+                  value={answers.reading_interruptions}
+                  max={1}
+                  onChange={(v) => set("reading_interruptions", v)}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {stage === 2 && (
+          <>
+            <StageHeader
+              title="You just finished a book you loved."
+              question="What happens next?"
+            />
+            <div className="mt-5 space-y-3">
+              <CardGroup
+                options={AFTER_BOOK_OPTIONS}
+                value={answers.post_book_behaviour}
+                max={2}
+                onChange={(v) => set("post_book_behaviour", v)}
+              />
+              <SelectionHint count={answers.post_book_behaviour.length} max={2} />
+            </div>
+            <div className="mt-9 border-t border-border pt-7">
+              <p className="text-base font-medium text-ink">Which conversation sounds more like you?</p>
+              <div className="mt-4">
+                <CardGroup
+                  compact
+                  options={CONVERSATION_OPTIONS}
+                  value={answers.conversation_style}
+                  max={1}
+                  onChange={(v) => set("conversation_style", v)}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {stage === 3 && (
+          <>
+            <StageHeader
+              title="Imagine you've been coming to Circle for six months."
+              copy="What would make you think: &ldquo;I'm glad I found these people.&rdquo;"
+            />
+            <div className="mt-6 space-y-3">
+              <CardGroup
+                compact
+                options={BELONGING_OPTIONS}
+                value={answers.community_motivations}
+                max={3}
+                onChange={(v) => set("community_motivations", v)}
+              />
+              <SelectionHint count={answers.community_motivations.length} max={3} />
+            </div>
+          </>
         )}
       </div>
 
-      <div className="mt-8 flex flex-1 flex-col justify-center">
-        {steps[step]}
+      <div className="sticky bottom-0 mt-8 bg-gradient-to-t from-paper via-paper to-transparent pb-6 pt-4 safe-bottom">
+        <Button
+          onClick={goNext}
+          disabled={!canContinue || finishMutation.isPending}
+          className="h-13 w-full rounded-xl bg-primary py-4 text-base font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
+        >
+          {finishMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          {stage === TOTAL_STAGES - 1 ? "Finish" : "Continue"}
+        </Button>
       </div>
+    </div>
+  );
+}
 
-      <div className="mb-8 safe-bottom">
-        {step < steps.length - 1 ? (
-          <Button onClick={() => setStep((s) => s + 1)} className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90">
-            {step === 0 ? "Get Started" : "Continue"} <ArrowRight size={18} className="ml-2" />
-          </Button>
-        ) : (
-          <Button onClick={finish} disabled={finishMutation.isPending} className="h-12 w-full rounded-xl bg-forest text-white hover:bg-forest/90">
-            Start Reading <Check size={18} className="ml-2" />
-          </Button>
-        )}
+function PersonalityReveal({ personality, onEnter }: { personality: Personality; onEnter: () => void }) {
+  return (
+    <div className="phone-shell mx-auto flex min-h-screen max-w-md flex-col bg-paper px-7 pt-safe-top">
+      <div className="flex flex-1 flex-col justify-center">
+        <p className="animate-in fade-in text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground duration-500">
+          We think we know your type.
+        </p>
+        <h1
+          className="mt-6 animate-in fade-in slide-in-from-bottom-2 text-[38px] leading-[1.08] font-semibold text-ink duration-500"
+          style={{ fontFamily: "var(--font-heading)", animationDelay: "120ms", animationFillMode: "both" }}
+        >
+          {personality.name}
+        </h1>
+        <p
+          className="mt-5 animate-in fade-in slide-in-from-bottom-2 text-[17px] leading-relaxed text-muted-foreground duration-500"
+          style={{ animationDelay: "260ms", animationFillMode: "both" }}
+        >
+          {personality.description}
+        </p>
+        <div className="mt-8 h-px w-16 bg-border" />
+        <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+          We'll use this to shape the circles, books and people we put in front of you. It can change as you read.
+        </p>
+      </div>
+      <div className="pb-10 safe-bottom">
+        <Button
+          onClick={onEnter}
+          className="h-13 w-full rounded-xl bg-ink py-4 text-base font-medium text-paper hover:bg-ink/90"
+        >
+          Enter Circle
+        </Button>
       </div>
     </div>
   );
