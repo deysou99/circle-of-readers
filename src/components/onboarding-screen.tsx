@@ -123,7 +123,7 @@ export function OnboardingScreen() {
         <BasicProfileStep
           identity={data.identity}
           profile={data.profile as never}
-          isGoogle={!!data.identity.avatarUrl || !!data.identity.email}
+          isGoogle={data.identity.isGoogle}
           onDone={() => {
             queryClient.invalidateQueries({ queryKey: ["my-profile"] });
             setPhase("reader");

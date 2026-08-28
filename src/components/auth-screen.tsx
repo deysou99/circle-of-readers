@@ -15,7 +15,8 @@ export function AuthScreen() {
       return;
     }
     if (!result?.redirected) {
-      navigate({ to: "/home" });
+      // /onboarding sends already-onboarded members straight to /home.
+      navigate({ to: "/onboarding" });
     }
   }
 
