@@ -60,7 +60,7 @@ export function OnboardingScreen({ editMode = false }: { editMode?: boolean } = 
     if (!data) return;
     if (phase === "reveal") return;
     if (data.stage === "done" && !editMode) {
-      navigate({ to: "/home" });
+      navigate({ to: "/home", replace: true });
       return;
     }
     if (data.reader) {

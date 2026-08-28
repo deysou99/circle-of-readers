@@ -42,7 +42,7 @@ function AuthenticatedLayout() {
 
   useEffect(() => {
     if (needsOnboarding && !onOnboarding) {
-      navigate({ to: "/onboarding" });
+      navigate({ to: "/onboarding", replace: true });
     }
   }, [needsOnboarding, onOnboarding, navigate]);
 
