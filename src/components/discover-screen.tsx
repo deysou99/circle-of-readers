@@ -117,7 +117,7 @@ export function DiscoverScreen() {
               {ARTICLES.map((a) => (
                 <Link key={a.slug} to="/journal/$slug" params={{ slug: a.slug }} className="block rounded-2xl border border-border bg-parchment p-3">
                   <p className="text-sm font-medium text-ink">{a.title}</p>
-                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{a.excerpt}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{a.subtitle}</p>
                 </Link>
               ))}
             </div>
