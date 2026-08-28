@@ -63,6 +63,7 @@ export function EmailAuthScreen() {
       if (error) {
         fail(error.message, { stage: "signup" });
       } else if (data.user && !data.user.email_confirmed_at) {
+        sessionStorage.setItem("circle.auth.pending-email", email);
         toast.success("Account created. Confirm your email to continue.");
         navigate({ to: "/verify-email", replace: true });
       } else if (data.session) {
