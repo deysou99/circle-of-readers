@@ -24,7 +24,7 @@ interface Props {
     goodreads_stats?: unknown;
   } | null;
   isGoogle: boolean;
-  onDone: () => void;
+  onDone: (phone: string) => void;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -71,7 +71,7 @@ export function BasicProfileStep({ identity, profile, isGoogle, onDone }: Props)
           ...(identity.avatarUrl ? { avatarUrl: identity.avatarUrl } : {}),
         },
       }),
-    onSuccess: onDone,
+    onSuccess: () => onDone(phone.trim()),
     onError: (e: Error) => toast.error(e.message),
   });
 
