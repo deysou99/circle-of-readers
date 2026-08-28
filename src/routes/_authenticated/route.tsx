@@ -1,7 +1,11 @@
-import { Outlet, createFileRoute, redirect, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { Outlet, createFileRoute, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { BottomNav } from "@/components/bottom-nav";
 import { useAuth } from "@/contexts/auth-context";
 import { supabase } from "@/integrations/supabase/client";
+import { getOnboardingState } from "@/lib/onboarding.functions";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -15,8 +19,25 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const { isLoading, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const hideNav = pathname === "/onboarding";
+  const onOnboarding = pathname === "/onboarding";
+
+  const fetchState = useServerFn(getOnboardingState);
+  const gate = useQuery({
+    queryKey: ["onboarding-state"],
+    queryFn: () => fetchState({}),
+    enabled: isAuthenticated,
+    staleTime: 60_000,
+  });
+
+  const needsOnboarding = gate.data ? gate.data.stage !== "done" : false;
+
+  useEffect(() => {
+    if (needsOnboarding && !onOnboarding) {
+      navigate({ to: "/onboarding" });
+    }
+  }, [needsOnboarding, onOnboarding, navigate]);
 
   if (isLoading) {
     return (
@@ -36,10 +57,14 @@ function AuthenticatedLayout() {
     );
   }
 
+  if (onOnboarding) {
+    return <Outlet />;
+  }
+
   return (
     <div className="phone-shell relative min-h-screen bg-paper pb-[88px]">
       <Outlet />
-      {!hideNav && <BottomNav />}
+      <BottomNav />
     </div>
   );
 }
