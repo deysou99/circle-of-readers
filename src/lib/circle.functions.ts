@@ -278,13 +278,14 @@ export const getBooks = createServerFn({ method: "GET" })
     const [{ data: books }, { data: shelf }, { data: profile }] = await Promise.all([
       supabase.from("books").select("*").order("title"),
       supabase.from("user_books").select("*").eq("user_id", userId),
-      supabase.from("profiles").select("reading_goal").eq("user_id", userId).maybeSingle(),
+      supabase.rpc("get_my_profile"),
     ]);
     return {
       books: books ?? [],
       shelf: shelf ?? [],
       readingGoal: profile?.reading_goal ?? 30,
     };
+
   });
 
 export const getBookDetail = createServerFn({ method: "GET" })
