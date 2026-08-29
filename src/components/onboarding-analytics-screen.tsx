@@ -115,8 +115,16 @@ export function OnboardingAnalyticsScreen() {
           disabled={!data}
           className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-ink disabled:opacity-50"
         >
-          <Download size={14} /> CSV
+          <Download size={14} /> Summary
         </button>
+        <button
+          onClick={exportEventRows}
+          disabled={!data}
+          className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-ink disabled:opacity-50"
+        >
+          <Download size={14} /> Rows
+        </button>
+
       </header>
 
       <section className="flex flex-wrap gap-2 px-4 pt-4">
