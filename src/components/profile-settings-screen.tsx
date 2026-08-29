@@ -73,6 +73,9 @@ export function ProfileSettingsScreen() {
       <section className="px-4 pt-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preferences</p>
         <div className="mt-2 space-y-1 rounded-2xl border border-border bg-parchment p-2">
+          <Link to="/diagnostics" className="block">
+            <Row icon={Bell} label="Diagnostics" />
+          </Link>
           <Link to="/profile/notifications" className="block">
             <Row icon={Bell} label="Notification preferences" />
           </Link>

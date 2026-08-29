@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { Bell, Plus, Heart, MessageCircle, BookOpen, UserSearch } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +13,10 @@ import { RecommendationsRail } from "@/components/recommendations-rail";
 import { ResumeOnboardingBanner } from "@/components/resume-onboarding-banner";
 import { CreatePostSheet } from "@/components/create-post-sheet";
 import { PostImage } from "@/components/post-image";
+import { FeedSkeleton } from "@/components/home-skeleton";
+import { AppErrorBoundary } from "@/components/app-error-boundary";
+import { usePushAlerts } from "@/lib/use-push-alerts";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 
 function timeAgo(iso: string) {
@@ -25,6 +30,18 @@ function timeAgo(iso: string) {
 }
 
 export function HomeScreen() {
+  // The router context must exist before any useServerFn call; if a stale
+  // duplicate React copy breaks context, render a fallback instead of crashing.
+  const routerReady = useRouterState({ select: () => true });
+  if (!routerReady) return null;
+  return (
+    <AppErrorBoundary>
+      <HomeScreenInner />
+    </AppErrorBoundary>
+  );
+}
+
+function HomeScreenInner() {
   const fetchFeed = useServerFn(getTimeline);
   const like = useServerFn(toggleLike);
   const queryClient = useQueryClient();
@@ -33,10 +50,13 @@ export function HomeScreen() {
   const [range, setRange] = useState<TimelineRange>("all");
   const [clubId, setClubId] = useState<string | null>(null);
 
-  const { data: posts, isLoading } = useQuery({
+  const { data: posts, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["feed", type, range, clubId],
     queryFn: () => fetchFeed({ data: { type, range, clubId } }),
+    retry: 1,
   });
+
+  usePushAlerts();
 
   const likeMutation = useMutation({
     mutationFn: (postId: string) => like({ data: { postId } }),
@@ -102,8 +122,24 @@ export function HomeScreen() {
       )}
 
       <main className="space-y-4 px-4 pt-4">
-        {isLoading && <p className="pt-8 text-center text-sm text-muted-foreground">Loading your feed…</p>}
-        {!isLoading && (posts ?? []).length === 0 && (
+        {isLoading && <FeedSkeleton />}
+
+        {isError && (
+          <div className="rounded-2xl border border-secondary/40 bg-secondary/5 p-6 text-center">
+            <AlertTriangle size={22} className="mx-auto text-secondary" />
+            <p className="mt-2 text-sm font-medium text-ink">We couldn't load your timeline</p>
+            <p className="mt-1 text-xs text-muted-foreground">{(error as Error)?.message ?? "The request failed or timed out."}</p>
+            <Button
+              onClick={() => void refetch()}
+              disabled={isFetching}
+              className="mt-4 h-10 rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90"
+            >
+              <RefreshCw size={16} className={`mr-2 ${isFetching ? "animate-spin" : ""}`} /> Try again
+            </Button>
+          </div>
+        )}
+
+        {!isLoading && !isError && (posts ?? []).length === 0 && (
           <div className="rounded-2xl border border-dashed border-border bg-parchment p-8 text-center">
             <p className="text-sm font-medium text-ink">Nothing here yet</p>
             <p className="mt-1 text-xs text-muted-foreground">Share your first reading update to get the conversation going.</p>
