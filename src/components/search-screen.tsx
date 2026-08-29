@@ -14,6 +14,8 @@ import {
   toggleFollow,
   toggleClubMembership,
   logSearchClick,
+  searchSuggestions,
+  logSearchEngagement,
 } from "@/lib/circle.functions";
 import { PostImage } from "@/components/post-image";
 import type { SearchNavState } from "@/lib/search-nav";
@@ -55,6 +57,7 @@ export function SearchScreen() {
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const sentinel = useRef<HTMLDivElement | null>(null);
 
   const search = useServerFn(searchCircle);
@@ -64,6 +67,8 @@ export function SearchScreen() {
   const follow = useServerFn(toggleFollow);
   const joinClub = useServerFn(toggleClubMembership);
   const trackClick = useServerFn(logSearchClick);
+  const fetchSuggestions = useServerFn(searchSuggestions);
+  const trackEngagement = useServerFn(logSearchEngagement);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query.trim()), 300);
@@ -76,9 +81,9 @@ export function SearchScreen() {
 
   const { data, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
     queryKey: searchKey,
-    initialPageParam: 0,
-    queryFn: ({ pageParam }) => search({ data: { query: debounced, type: filter, page: pageParam as number } }),
-    getNextPageParam: (lastPage: SearchPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) => search({ data: { query: debounced, type: filter, cursor: pageParam as string | null } }),
+    getNextPageParam: (lastPage: SearchPage) => lastPage.nextCursor ?? undefined,
   });
 
   const pages = useMemo(() => data?.pages ?? [], [data]);
@@ -100,6 +105,21 @@ export function SearchScreen() {
     observer.observe(node);
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Typeahead suggestions (short debounce, independent of the results query).
+  const [typeahead, setTypeahead] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setTypeahead(query.trim()), 150);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const { data: suggestionData } = useQuery({
+    queryKey: ["search-suggestions", typeahead, filter],
+    queryFn: () => fetchSuggestions({ data: { query: typeahead, type: filter } }),
+    enabled: typeahead.length >= 2,
+    staleTime: 30_000,
+  });
+  const suggestions = suggestionData?.suggestions ?? [];
 
   const saveRecent = useMutation({
     mutationFn: (vars: { query: string; filter: Filter }) => storeRecent({ data: vars }),
@@ -171,6 +191,46 @@ export function SearchScreen() {
     },
   });
 
+  /* ---- engagement: dwell time + deepest scroll depth per query/filter ---- */
+  const engagement = useRef({ start: Date.now(), deepest: 0, seen: 0 });
+  const flushEngagement = useCallback(
+    (q: string, f: Filter) => {
+      const { start, deepest, seen } = engagement.current;
+      const dwellMs = Date.now() - start;
+      if (!q || dwellMs < 1000) return;
+      void trackEngagement({ data: { query: q, filter: f, dwellMs, deepestPercent: deepest, resultsSeen: seen } }).catch(() => {});
+    },
+    [trackEngagement],
+  );
+
+  const activeSession = useRef({ query: debounced, filter });
+  useEffect(() => {
+    const previous = activeSession.current;
+    if (previous.query !== debounced || previous.filter !== filter) {
+      flushEngagement(previous.query, previous.filter);
+      engagement.current = { start: Date.now(), deepest: 0, seen: 0 };
+      activeSession.current = { query: debounced, filter };
+    }
+  }, [debounced, filter, flushEngagement]);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = max > 0 ? Math.round(((window.scrollY + window.innerHeight) / document.documentElement.scrollHeight) * 100) : 100;
+      engagement.current.deepest = Math.max(engagement.current.deepest, Math.min(100, pct));
+    };
+    const onHide = () => {
+      if (document.visibilityState === "hidden") flushEngagement(activeSession.current.query, activeSession.current.filter);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("visibilitychange", onHide);
+      flushEngagement(activeSession.current.query, activeSession.current.filter);
+    };
+  }, [flushEngagement]);
+
   const navState: SearchNavState = { searchQuery: debounced, searchFilter: filter };
 
   const onResultClick = (resultType: string, resultId: string, position: number) => {
@@ -180,6 +240,7 @@ export function SearchScreen() {
   };
 
   const total = people.length + clubs.length + books.length + posts.length;
+  engagement.current.seen = Math.max(engagement.current.seen, total);
   const noResults = !isFetching && total === 0;
 
   return (
@@ -194,11 +255,47 @@ export function SearchScreen() {
             <Input
               autoFocus
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === "Escape") setShowSuggestions(false);
+              }}
               placeholder="Search readers, circles, books, posts…"
               aria-label="Search Circle"
               className="h-10 rounded-full border-border bg-parchment pl-9 pr-9 text-sm"
             />
+            {showSuggestions && suggestions.length > 0 && query.trim().length >= 2 && (
+              <ul className="absolute left-0 right-0 top-12 z-50 overflow-hidden rounded-2xl border border-border bg-paper shadow-lg">
+                {suggestions.map((s) => (
+                  <li key={s.id}>
+                    <button
+                      onClick={() => {
+                        setQuery(s.label);
+                        setShowSuggestions(false);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-ink hover:bg-muted"
+                    >
+                      {s.kind === "recent" ? (
+                        <Clock size={14} className="shrink-0 text-muted-foreground" />
+                      ) : s.kind === "person" ? (
+                        <User size={14} className="shrink-0 text-muted-foreground" />
+                      ) : s.kind === "circle" ? (
+                        <Users size={14} className="shrink-0 text-muted-foreground" />
+                      ) : (
+                        <BookOpen size={14} className="shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="truncate">
+                        <Highlight text={s.label} query={query.trim()} />
+                      </span>
+                      {s.sublabel && <span className="ml-auto truncate text-xs text-muted-foreground">{s.sublabel}</span>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
             {query && (
               <button
                 onClick={() => setQuery("")}
@@ -210,11 +307,14 @@ export function SearchScreen() {
             )}
           </div>
         </div>
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="flex items-center gap-2 overflow-x-auto">
           {FILTERS.map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              onClick={() => {
+                setFilter(f);
+                setShowSuggestions(false);
+              }}
               className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
                 filter === f ? "bg-primary text-primary-foreground" : "border border-border bg-paper text-ink hover:bg-muted"
               }`}
@@ -222,6 +322,18 @@ export function SearchScreen() {
               {f}
             </button>
           ))}
+          {(filter !== "All" || query) && (
+            <button
+              onClick={() => {
+                setFilter("All");
+                setQuery("");
+                setShowSuggestions(false);
+              }}
+              className="ml-auto whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground underline-offset-2 hover:text-ink hover:underline"
+            >
+              Clear all
+            </button>
+          )}
         </div>
       </header>
 
