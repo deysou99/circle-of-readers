@@ -8,11 +8,11 @@ export type OwnProfile = Database["public"]["Tables"]["profiles"]["Row"];
  * (email, phone, Goodreads data) that the `authenticated` role is not allowed
  * to select directly. Always scoped to the verified user id of the caller.
  */
-export async function readOwnProfile(userId: string): Promise<OwnProfile | null> {
+export async function readOwnProfile(userId: string): Promise<{ data: OwnProfile | null }> {
   const { data } = await supabaseAdmin
     .from("profiles")
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
-  return (data as OwnProfile | null) ?? null;
+  return { data: (data as OwnProfile | null) ?? null };
 }
