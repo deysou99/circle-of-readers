@@ -508,6 +508,45 @@ export type Database = {
         }
         Relationships: []
       }
+      search_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          filter: string
+          id: string
+          position: number | null
+          query: string
+          result_count: number | null
+          result_id: string | null
+          result_type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          filter?: string
+          id?: string
+          position?: number | null
+          query?: string
+          result_count?: number | null
+          result_id?: string | null
+          result_type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          filter?: string
+          id?: string
+          position?: number | null
+          query?: string
+          result_count?: number | null
+          result_id?: string | null
+          result_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       search_recents: {
         Row: {
           created_at: string
