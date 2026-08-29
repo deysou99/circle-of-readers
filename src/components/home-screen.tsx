@@ -118,6 +118,9 @@ export function HomeScreen() {
               <p className="mt-3 text-[15px] leading-relaxed text-ink">{post.content}</p>
             </Link>
 
+            {post.image_url && <PostImage path={post.image_url} className="mt-3 h-56 w-full rounded-xl object-cover" />}
+
+
             {post.books && (
               <Link to="/books/$id" params={{ id: post.books.id }} className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-paper p-2">
                 {post.books.cover_url && <img src={post.books.cover_url} alt={post.books.title} className="h-14 w-10 rounded object-cover" />}
