@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { CalendarPlus, ExternalLink } from "lucide-react";
+import { downloadIcs, googleCalendarUrl } from "@/lib/calendar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { createClubEvent, getClubEvents, setEventRsvp } from "@/lib/social.functions";
 import { toast } from "sonner";
@@ -109,6 +111,42 @@ export function ClubEvents({ clubId, canCreate }: { clubId: string; canCreate: b
                   </button>
                 ))}
               </div>
+
+              {status && status !== "not_going" && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() =>
+                      downloadIcs({
+                        id: e.id,
+                        title: e.title,
+                        description: e.description,
+                        location: e.location,
+                        startsAt: e.starts_at,
+                        durationMinutes: e.duration_minutes,
+                        reminderMinutes: reminderOn ? (e.myRsvp?.reminderMinutes ?? 60) : null,
+                      })
+                    }
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-primary px-3 py-2 text-xs font-medium text-primary"
+                  >
+                    <CalendarPlus size={14} /> Add to calendar
+                  </button>
+                  <a
+                    href={googleCalendarUrl({
+                      id: e.id,
+                      title: e.title,
+                      description: e.description,
+                      location: e.location,
+                      startsAt: e.starts_at,
+                      durationMinutes: e.duration_minutes,
+                    })}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="flex items-center justify-center gap-1.5 rounded-full border border-border bg-paper px-3 py-2 text-xs text-ink"
+                  >
+                    <ExternalLink size={13} /> Google
+                  </a>
+                </div>
+              )}
 
               {status && status !== "not_going" && (
                 <div className="mt-3 flex items-center justify-between rounded-xl bg-paper px-3 py-2">
