@@ -72,3 +72,20 @@ function AuthenticatedLayout() {
     </div>
   );
 }
+
+/**
+ * Never leaves an authenticated route sitting on a dead-end "please sign in"
+ * screen: as soon as we know there is no session, we send the reader to /auth.
+ */
+function SignInRedirect() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    navigate({ to: "/auth", replace: true });
+  }, [navigate]);
+
+  return (
+    <div className="phone-shell flex min-h-screen items-center justify-center bg-paper px-6">
+      <p className="text-sm text-muted-foreground">Taking you to sign in…</p>
+    </div>
+  );
+}

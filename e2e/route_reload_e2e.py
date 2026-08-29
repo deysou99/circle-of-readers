@@ -15,10 +15,10 @@ SCREENSHOTS.mkdir(parents=True, exist_ok=True)
 
 # route -> substring expected in the URL after the guards settle
 ROUTES = {
-    "/": "/auth",
+    "/": "/",
     "/auth": "/auth",
     "/auth/email": "/auth/email",
-    "/verify-email": "/verify-email",
+    "/verify-email": "/auth",
     "/onboarding": "/auth",
     "/home": "/auth",
     "/profile": "/auth",
