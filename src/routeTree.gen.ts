@@ -28,6 +28,7 @@ import { Route as AuthIndexRouteImport } from './routes/auth.index'
 import { Route as AuthEmailRouteImport } from './routes/auth.email'
 import { Route as GoodreadsCallbackRouteImport } from './routes/goodreads.callback'
 import { Route as AuthenticatedAdminOtpRouteImport } from './routes/_authenticated.admin.otp'
+import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated.admin.security'
 import { Route as AuthenticatedBooksIdRouteImport } from './routes/_authenticated.books.$id'
 import { Route as AuthenticatedClubsIdRouteImport } from './routes/_authenticated.clubs.$id'
 import { Route as AuthenticatedJournalSlugRouteImport } from './routes/_authenticated.journal.$slug'
@@ -140,6 +141,12 @@ const AuthenticatedAdminOtpRoute = AuthenticatedAdminOtpRouteImport.update({
   path: '/admin/otp',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminSecurityRoute =
+  AuthenticatedAdminSecurityRouteImport.update({
+    id: '/admin/security',
+    path: '/admin/security',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedBooksIdRoute = AuthenticatedBooksIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -245,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/goodreads/callback': typeof GoodreadsCallbackRoute
   '/auth/': typeof AuthIndexRoute
   '/admin/otp': typeof AuthenticatedAdminOtpRoute
+  '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/books/$id': typeof AuthenticatedBooksIdRoute
   '/clubs/$id': typeof AuthenticatedClubsIdRouteWithChildren
   '/journal/$slug': typeof AuthenticatedJournalSlugRoute
@@ -279,6 +287,7 @@ export interface FileRoutesByTo {
   '/goodreads/callback': typeof GoodreadsCallbackRoute
   '/auth': typeof AuthIndexRoute
   '/admin/otp': typeof AuthenticatedAdminOtpRoute
+  '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/books/$id': typeof AuthenticatedBooksIdRoute
   '/clubs/$id': typeof AuthenticatedClubsIdRouteWithChildren
   '/journal/$slug': typeof AuthenticatedJournalSlugRoute
@@ -316,6 +325,7 @@ export interface FileRoutesById {
   '/goodreads/callback': typeof GoodreadsCallbackRoute
   '/auth/': typeof AuthIndexRoute
   '/_authenticated/admin/otp': typeof AuthenticatedAdminOtpRoute
+  '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/books/$id': typeof AuthenticatedBooksIdRoute
   '/_authenticated/clubs/$id': typeof AuthenticatedClubsIdRouteWithChildren
   '/_authenticated/journal/$slug': typeof AuthenticatedJournalSlugRoute
@@ -353,6 +363,7 @@ export interface FileRouteTypes {
     | '/goodreads/callback'
     | '/auth/'
     | '/admin/otp'
+    | '/admin/security'
     | '/books/$id'
     | '/clubs/$id'
     | '/journal/$slug'
@@ -387,6 +398,7 @@ export interface FileRouteTypes {
     | '/goodreads/callback'
     | '/auth'
     | '/admin/otp'
+    | '/admin/security'
     | '/books/$id'
     | '/clubs/$id'
     | '/journal/$slug'
@@ -423,6 +435,7 @@ export interface FileRouteTypes {
     | '/goodreads/callback'
     | '/auth/'
     | '/_authenticated/admin/otp'
+    | '/_authenticated/admin/security'
     | '/_authenticated/books/$id'
     | '/_authenticated/clubs/$id'
     | '/_authenticated/journal/$slug'
@@ -582,6 +595,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/otp'
       fullPath: '/admin/otp'
       preLoaderRoute: typeof AuthenticatedAdminOtpRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/security': {
+      id: '/_authenticated/admin/security'
+      path: '/admin/security'
+      fullPath: '/admin/security'
+      preLoaderRoute: typeof AuthenticatedAdminSecurityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/books/$id': {
@@ -750,6 +770,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedAdminOtpRoute: typeof AuthenticatedAdminOtpRoute
+  AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
   AuthenticatedJournalSlugRoute: typeof AuthenticatedJournalSlugRoute
   AuthenticatedPostsIdRoute: typeof AuthenticatedPostsIdRoute
   AuthenticatedProfileCircleRoute: typeof AuthenticatedProfileCircleRoute
@@ -775,6 +796,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedAdminOtpRoute: AuthenticatedAdminOtpRoute,
+  AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
   AuthenticatedJournalSlugRoute: AuthenticatedJournalSlugRoute,
   AuthenticatedPostsIdRoute: AuthenticatedPostsIdRoute,
   AuthenticatedProfileCircleRoute: AuthenticatedProfileCircleRoute,
