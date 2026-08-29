@@ -12,14 +12,24 @@ export const Route = createFileRoute("/_authenticated/readers/$id")({
     };
   },
 
-  head: () => ({
-    meta: [
-      { title: "Reader Profile — Circle" },
-      { name: "description", content: "Another reader's profile on Circle." },
-      { property: "og:title", content: "Reader Profile — Circle" },
-      { property: "og:description", content: "Another reader's profile on Circle." },
-    ],
-  }),
+  head: ({ match }) => {
+    const search = match.search as { tab?: string };
+    const tab = search.tab ? search.tab.replace(/[^a-z]/gi, "").slice(0, 20) : "";
+    const title = tab ? `Reader Profile · ${tab} — Circle` : "Reader Profile — Circle";
+    const description = tab
+      ? `See this reader's ${tab} on Circle.`
+      : "Another reader's profile on Circle.";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "profile" },
+        { name: "twitter:card", content: "summary" },
+      ],
+    };
+  },
 });
 
 function UserProfileRoute() {

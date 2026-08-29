@@ -1,13 +1,16 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, RefreshCw, Search, Share2, X } from "lucide-react";
+import { ArrowLeft, Copy, Loader2, RefreshCw, Search, Share2, X } from "lucide-react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { getCirclePage, type CircleFilter, type CircleSort } from "@/lib/profile-tabs.functions";
 import { toggleFollow } from "@/lib/circle.functions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+
 
 type CircleTab = "followers" | "following";
 type CircleItem = {
@@ -80,10 +83,11 @@ export function ProfileCircleScreen({
   const [sort, setSort] = useState<CircleSort>(initialSort ?? "alphabetical");
   const [filter, setFilter] = useState<CircleFilter>(initialFilter ?? "all");
   const [pullOffset, setPullOffset] = useState(0);
+  const [shareOpen, setShareOpen] = useState(false);
+
   const pullStart = useRef<number | null>(null);
   const scrollRef = useRef<HTMLElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const firstMatchRef = useRef<HTMLDivElement | null>(null);
   const scrollOffset = useRef(0);
   const restored = useRef(false);
   const lastAutoScrolled = useRef("");
@@ -162,52 +166,88 @@ export function ProfileCircleScreen({
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["circle-page"] }),
   });
 
-  async function shareCircle() {
+  const pages = data?.pages ?? [];
+  const list = useMemo(() => pages.flatMap((p) => p.items), [pages]);
+  const counts = pages[0]?.counts ?? { followers: 0, following: 0 };
+  const matchCount = pages[0]?.matchCount ?? 0;
+  const firstMatchIndex = debounced && list.length ? 0 : -1;
+  const firstMatchId = firstMatchIndex >= 0 ? list[0]?.user_id ?? null : null;
+
+  /* ------------------------------ list virtualization ----------------------------- */
+  const virtualizer = useVirtualizer({
+    count: list.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 88,
+    overscan: 8,
+    getItemKey: (index) => list[index]?.user_id ?? index,
+  });
+  const virtualItems = virtualizer.getVirtualItems();
+
+  /* --------------------------------- share preview -------------------------------- */
+  const shareUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
     const params = new URLSearchParams({
       tab,
       ...(debounced ? { q: debounced } : {}),
       ...(sort !== "alphabetical" ? { sort } : {}),
       ...(filter !== "all" ? { filter } : {}),
+      ...(matchCount ? { n: String(matchCount) } : {}),
       ...(scrollOffset.current > 0 ? { s: String(Math.round(scrollOffset.current)) } : {}),
     });
-    const url = `${window.location.origin}/profile/circle?${params.toString()}`;
+    return `${window.location.origin}/profile/circle?${params.toString()}`;
+  }, [tab, debounced, sort, filter, matchCount, shareOpen]);
+
+  const previewTitle = `My ${tab} on Circle`;
+  const previewDescription = debounced
+    ? `${matchCount} ${matchCount === 1 ? "match" : "matches"} for “${debounced}” in my ${tab}.`
+    : `${tab === "followers" ? counts.followers : counts.following} readers in my ${tab} on Circle.`;
+
+  async function shareCircle() {
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({ title: "My circle on Circle", url });
+        await navigator.share({ title: previewTitle, text: previewDescription, url: shareUrl });
         toast.success("Link shared");
+        setShareOpen(false);
         return;
       }
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied — it opens right where you left off");
+      await copyShareLink();
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return;
       toast.error("Couldn't share this link");
     }
   }
 
-  const pages = data?.pages ?? [];
-  const list = pages.flatMap((p) => p.items);
-  const counts = pages[0]?.counts ?? { followers: 0, following: 0 };
-  const matchCount = pages[0]?.matchCount ?? 0;
-  const firstMatchId = debounced ? list[0]?.user_id ?? null : null;
+  async function copyShareLink() {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied — it opens right where you left off");
+      setShareOpen(false);
+    } catch {
+      toast.error("Couldn't copy this link");
+    }
+  }
 
   // Restore an exact scroll offset shared through the link.
   useLayoutEffect(() => {
     if (restored.current || isLoading || !list.length) return;
     const node = scrollRef.current;
     if (!node) return;
-    if (initialScroll && initialScroll > 0) node.scrollTop = initialScroll;
+    if (initialScroll && initialScroll > 0) {
+      virtualizer.scrollToOffset(initialScroll, { align: "start" });
+      node.scrollTop = initialScroll;
+    }
     restored.current = true;
-  }, [isLoading, list.length, initialScroll]);
+  }, [isLoading, list.length, initialScroll, virtualizer]);
 
   // Bring the first highlighted match into view when the search changes.
   useEffect(() => {
-    if (!debounced || !firstMatchId) return;
+    if (!debounced || !firstMatchId || firstMatchIndex < 0) return;
     const key = `${tab}:${debounced}:${firstMatchId}`;
     if (lastAutoScrolled.current === key) return;
     lastAutoScrolled.current = key;
-    firstMatchRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [debounced, firstMatchId, tab]);
+    virtualizer.scrollToIndex(firstMatchIndex, { align: "center", behavior: "smooth" });
+  }, [debounced, firstMatchId, firstMatchIndex, tab, virtualizer]);
+
 
   // infinite scroll
   useEffect(() => {
@@ -247,7 +287,7 @@ export function ProfileCircleScreen({
             variant="ghost"
             size="icon"
             aria-label="Share this list"
-            onClick={() => void shareCircle()}
+            onClick={() => setShareOpen(true)}
             className="ml-auto h-9 w-9 rounded-full text-ink hover:bg-muted"
           >
             <Share2 size={18} />
@@ -380,43 +420,60 @@ export function ProfileCircleScreen({
           </p>
         )}
 
-        {list.map((p) => (
-          <div
-            key={p.user_id}
-            ref={p.user_id === firstMatchId ? firstMatchRef : undefined}
-            className="flex items-center gap-3 rounded-2xl border border-border bg-parchment p-3"
-          >
-            <Link to="/readers/$id" params={{ id: p.user_id }} className="flex min-w-0 flex-1 items-center gap-3">
-              <Avatar className="h-11 w-11">
-                <AvatarImage src={p.avatar_url ?? undefined} />
-                <AvatarFallback>{(p.display_name ?? p.username).slice(0, 2)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-ink">
-                  <Highlight text={p.display_name ?? p.username} query={debounced} />
-                  {p.isMutual && (
-                    <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                      Mutual
-                    </span>
-                  )}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  @<Highlight text={p.username} query={debounced} />
-                </p>
-              </div>
-            </Link>
-            <Button
-              size="sm"
-              variant={p.isFollowing ? "outline" : "default"}
-              onClick={() => followMutation.mutate(p.user_id)}
-              className="h-8 shrink-0 rounded-full text-xs"
-            >
-              {p.isFollowing ? "Following" : "Follow"}
-            </Button>
+        {list.length > 0 && (
+          <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+            {virtualItems.map((row) => {
+              const p = list[row.index];
+              if (!p) return null;
+              return (
+                <div
+                  key={row.key}
+                  data-index={row.index}
+                  ref={virtualizer.measureElement}
+                  className="absolute left-0 top-0 w-full pb-3"
+                  style={{ transform: `translateY(${row.start}px)` }}
+                >
+                  <div
+                    className={`flex items-center gap-3 rounded-2xl border bg-parchment p-3 ${
+                      p.user_id === firstMatchId && debounced ? "border-primary" : "border-border"
+                    }`}
+                  >
+                    <Link to="/readers/$id" params={{ id: p.user_id }} className="flex min-w-0 flex-1 items-center gap-3">
+                      <Avatar className="h-11 w-11">
+                        <AvatarImage src={p.avatar_url ?? undefined} />
+                        <AvatarFallback>{(p.display_name ?? p.username).slice(0, 2)}</AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-ink">
+                          <Highlight text={p.display_name ?? p.username} query={debounced} />
+                          {p.isMutual && (
+                            <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                              Mutual
+                            </span>
+                          )}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          @<Highlight text={p.username} query={debounced} />
+                        </p>
+                      </div>
+                    </Link>
+                    <Button
+                      size="sm"
+                      variant={p.isFollowing ? "outline" : "default"}
+                      onClick={() => followMutation.mutate(p.user_id)}
+                      className="h-8 shrink-0 rounded-full text-xs"
+                    >
+                      {p.isFollowing ? "Following" : "Follow"}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
+        )}
 
         <div ref={sentinelRef} />
+
         {isFetchingNextPage && (
           <p className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
             <Loader2 size={14} className="animate-spin" /> Loading more…
@@ -428,6 +485,39 @@ export function ProfileCircleScreen({
           </Button>
         )}
       </main>
+
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-base">Share this view</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">This is how the link will look before anyone opens it.</p>
+          <div className="rounded-xl border border-border bg-parchment p-3">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">circle.myflip</p>
+            <p className="mt-1 text-sm font-semibold text-ink">{previewTitle}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{previewDescription}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] capitalize text-muted-foreground">{tab}</span>
+              {debounced && (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">“{debounced}”</span>
+              )}
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                {matchCount} {matchCount === 1 ? "match" : "matches"}
+              </span>
+            </div>
+            <p className="mt-2 truncate text-[10px] text-muted-foreground">{shareUrl}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 rounded-full" onClick={() => void copyShareLink()}>
+              <Copy size={16} className="mr-1.5" /> Copy link
+            </Button>
+            <Button className="flex-1 rounded-full" onClick={() => void shareCircle()}>
+              <Share2 size={16} className="mr-1.5" /> Share
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
