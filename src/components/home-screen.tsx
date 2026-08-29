@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Bell, Plus, Heart, MessageCircle, BookOpen, UserSearch } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -6,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getFeed, toggleLike } from "@/lib/circle.functions";
 import { ResumeOnboardingBanner } from "@/components/resume-onboarding-banner";
+import { CreatePostSheet } from "@/components/create-post-sheet";
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -21,6 +23,7 @@ export function HomeScreen() {
   const fetchFeed = useServerFn(getFeed);
   const like = useServerFn(toggleLike);
   const queryClient = useQueryClient();
+  const [composerOpen, setComposerOpen] = useState(false);
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ["feed"],
@@ -48,7 +51,7 @@ export function HomeScreen() {
           <span className="text-lg font-semibold text-ink" style={{ fontFamily: "var(--font-heading)" }}>Circle</span>
         </div>
         <div className="flex items-center gap-1">
-          <Link to="/discover" aria-label="Search readers and circles">
+          <Link to="/search" aria-label="Search readers and circles">
             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-ink hover:bg-muted">
               <UserSearch size={20} />
             </Button>
@@ -83,9 +86,7 @@ export function HomeScreen() {
           <div className="rounded-2xl border border-dashed border-border bg-parchment p-8 text-center">
             <p className="text-sm font-medium text-ink">Your feed is quiet</p>
             <p className="mt-1 text-xs text-muted-foreground">Share your first reading update to get the conversation going.</p>
-            <Link to="/create-post">
-              <Button className="mt-4 h-10 rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90">Write a post</Button>
-            </Link>
+            <Button onClick={() => setComposerOpen(true)} className="mt-4 h-10 rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90">Write a post</Button>
           </div>
         )}
         {(posts ?? []).map((post) => (
@@ -145,13 +146,15 @@ export function HomeScreen() {
         ))}
       </main>
 
-      <Link
-        to="/create-post"
+      <button
+        onClick={() => setComposerOpen(true)}
         aria-label="Create a new post"
         className="fixed bottom-[88px] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
       >
         <Plus size={26} strokeWidth={2.5} />
-      </Link>
+      </button>
+
+      <CreatePostSheet open={composerOpen} onOpenChange={setComposerOpen} />
     </div>
   );
 }
