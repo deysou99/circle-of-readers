@@ -209,6 +209,33 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <p className="py-10 text-center text-sm text-muted-foreground">{children}</p>;
 }
 
+function LoadingList({ rows = 4 }: { rows?: number }) {
+  return (
+    <div className="space-y-3" aria-busy="true" aria-label="Loading">
+      {Array.from({ length: rows }).map((_, n) => (
+        <div key={n} className="flex animate-pulse gap-3 rounded-2xl border border-border bg-parchment p-3">
+          <div className="h-16 w-12 shrink-0 rounded-md bg-muted" />
+          <div className="flex-1 space-y-2 py-1">
+            <div className="h-3 w-2/3 rounded bg-muted" />
+            <div className="h-3 w-1/3 rounded bg-muted" />
+            <div className="h-3 w-1/2 rounded bg-muted" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="rounded-2xl border border-border bg-parchment p-6 text-center">
+      <p className="text-sm text-ink">{message}</p>
+      <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
+      <Button size="sm" className="mt-3 rounded-full" onClick={onRetry}>Retry</Button>
+    </div>
+  );
+}
+
 function Stars({ rating }: { rating: number }) {
   return (
     <span className="flex items-center gap-0.5">
@@ -221,10 +248,11 @@ function Stars({ rating }: { rating: number }) {
 
 function ReviewsTab() {
   const fetchReviews = useServerFn(getMyReviews);
-  const { data, isLoading } = useQuery({ queryKey: ["my-reviews"], queryFn: () => fetchReviews() });
+  const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["my-reviews"], queryFn: () => fetchReviews() });
   const reviews = data?.reviews ?? [];
 
-  if (isLoading) return <Empty>Loading your reviews…</Empty>;
+  if (isLoading) return <LoadingList />;
+  if (isError) return <ErrorState message="We couldn't load your reviews." onRetry={() => void refetch()} />;
   if (!reviews.length) return <Empty>No reviews yet. Rate a book from your shelf to start.</Empty>;
 
   return (
@@ -244,7 +272,19 @@ function ReviewsTab() {
   );
 }
 
-function ClubsTab({ clubs }: { clubs: Array<{ id: string; name: string; avatar_url: string | null; member_count: number | null }> }) {
+function ClubsTab({
+  clubs,
+  isLoading,
+  isError,
+  onRetry,
+}: {
+  clubs: Array<{ id: string; name: string; avatar_url: string | null; member_count: number | null }>;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+}) {
+  if (isLoading) return <LoadingList rows={3} />;
+  if (isError) return <ErrorState message="We couldn't load your circles." onRetry={onRetry} />;
   if (!clubs.length) return <Empty>You haven't joined a circle yet. Discover one from the Discover tab.</Empty>;
   return (
     <div className="space-y-2">
@@ -266,10 +306,11 @@ function ClubsTab({ clubs }: { clubs: Array<{ id: string; name: string; avatar_u
 
 function PostsTab() {
   const fetchPosts = useServerFn(getMyPosts);
-  const { data, isLoading } = useQuery({ queryKey: ["my-posts"], queryFn: () => fetchPosts() });
+  const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["my-posts"], queryFn: () => fetchPosts() });
   const posts = data?.posts ?? [];
 
-  if (isLoading) return <Empty>Loading your posts…</Empty>;
+  if (isLoading) return <LoadingList rows={3} />;
+  if (isError) return <ErrorState message="We couldn't load your posts." onRetry={() => void refetch()} />;
   if (!posts.length) return <Empty>You haven't posted yet. Tap the + button on Home to share a thought.</Empty>;
 
   return (
@@ -288,9 +329,10 @@ function PostsTab() {
 
 function LikesTab() {
   const fetchLikes = useServerFn(getMyLikes);
-  const { data, isLoading } = useQuery({ queryKey: ["my-likes"], queryFn: () => fetchLikes() });
+  const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["my-likes"], queryFn: () => fetchLikes() });
 
-  if (isLoading) return <Empty>Loading what you loved…</Empty>;
+  if (isLoading) return <LoadingList rows={3} />;
+  if (isError) return <ErrorState message="We couldn't load your likes." onRetry={() => void refetch()} />;
   const posts = data?.posts ?? [];
   const books = data?.books ?? [];
   if (!posts.length && !books.length) return <Empty>Nothing liked yet. Tap the heart on posts you enjoy.</Empty>;
