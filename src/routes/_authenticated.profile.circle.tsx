@@ -3,6 +3,14 @@ import { ProfileCircleScreen } from "@/components/profile-circle-screen";
 
 export const Route = createFileRoute("/_authenticated/profile/circle")({
   component: ProfileCircleRoute,
+  validateSearch: (search: Record<string, unknown>): { tab?: "followers" | "following"; q?: string } => {
+    const tab = String(search["tab"] ?? "");
+    const q = typeof search["q"] === "string" ? search["q"].slice(0, 60) : "";
+    return {
+      ...(tab === "following" || tab === "followers" ? { tab } : {}),
+      ...(q ? { q } : {}),
+    };
+  },
   head: () => ({
     meta: [
       { title: "My Circle — Circle" },
@@ -14,5 +22,6 @@ export const Route = createFileRoute("/_authenticated/profile/circle")({
 });
 
 function ProfileCircleRoute() {
-  return <ProfileCircleScreen />;
+  const { tab, q } = Route.useSearch();
+  return <ProfileCircleScreen initialTab={tab} initialQuery={q} />;
 }

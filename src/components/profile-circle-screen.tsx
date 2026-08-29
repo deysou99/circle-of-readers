@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, RefreshCw, Search, X } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, Loader2, RefreshCw, Search, Share2, X } from "lucide-react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getCirclePage } from "@/lib/profile-tabs.functions";
@@ -9,13 +9,45 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-export function ProfileCircleScreen() {
+type CircleTab = "followers" | "following";
+type CircleItem = {
+  user_id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  isFollowing: boolean;
+};
+type CirclePage = { items: CircleItem[]; hasMore: boolean; page: number; counts: { followers: number; following: number } };
+
+function Highlight({ text, query }: { text: string; query: string }) {
+  const q = query.trim();
+  if (!q) return <>{text}</>;
+  const parts = text.split(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "ig"));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === q.toLowerCase() ? (
+          <mark key={i} className="rounded bg-primary/20 px-0.5 text-ink">{part}</mark>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+export function ProfileCircleScreen({
+  initialTab,
+  initialQuery,
+}: { initialTab?: CircleTab | undefined; initialQuery?: string | undefined } = {}) {
   const fetchPage = useServerFn(getCirclePage);
   const follow = useServerFn(toggleFollow);
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<"followers" | "following">("followers");
-  const [query, setQuery] = useState("");
-  const [debounced, setDebounced] = useState("");
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<CircleTab>(initialTab ?? "followers");
+  const [query, setQuery] = useState(initialQuery ?? "");
+  const [debounced, setDebounced] = useState(initialQuery ?? "");
   const [pullOffset, setPullOffset] = useState(0);
   const pullStart = useRef<number | null>(null);
   const scrollRef = useRef<HTMLElement | null>(null);
@@ -25,6 +57,16 @@ export function ProfileCircleScreen() {
     const t = setTimeout(() => setDebounced(query.trim()), 300);
     return () => clearTimeout(t);
   }, [query]);
+
+  // Keep the URL in sync so the view is shareable/restorable.
+  useEffect(() => {
+    void navigate({
+      to: "/profile/circle",
+      search: { tab, ...(debounced ? { q: debounced } : {}) },
+      replace: true,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, debounced]);
 
   const {
     data,
@@ -45,9 +87,49 @@ export function ProfileCircleScreen() {
 
   const followMutation = useMutation({
     mutationFn: (userId: string) => follow({ data: { userId } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["circle-page"] }),
-    onError: (e: Error) => toast.error(e.message),
+    onMutate: async (userId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["circle-page"] });
+      const snapshot = queryClient.getQueriesData({ queryKey: ["circle-page"] });
+      queryClient.setQueriesData<{ pages: CirclePage[]; pageParams: unknown[] }>(
+        { queryKey: ["circle-page"] },
+        (old) =>
+          old
+            ? {
+                ...old,
+                pages: old.pages.map((p) => ({
+                  ...p,
+                  items: p.items.map((it) =>
+                    it.user_id === userId ? { ...it, isFollowing: !it.isFollowing } : it,
+                  ),
+                })),
+              }
+            : old,
+      );
+      return { snapshot };
+    },
+    onError: (e: Error, _userId, ctx) => {
+      ctx?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
+      toast.error(e.message || "Couldn't update that follow. Reverted.");
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["circle-page"] }),
   });
+
+  async function shareCircle() {
+    const params = new URLSearchParams({ tab, ...(debounced ? { q: debounced } : {}) });
+    const url = `${window.location.origin}/profile/circle?${params.toString()}`;
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: "My circle on Circle", url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied");
+    } catch (e) {
+      if ((e as Error)?.name === "AbortError") return;
+      toast.error("Couldn't share this link");
+    }
+  }
+
 
   const pages = data?.pages ?? [];
   const list = pages.flatMap((p) => p.items);
@@ -90,9 +172,18 @@ export function ProfileCircleScreen() {
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Share this list"
+            onClick={() => void shareCircle()}
+            className="ml-auto h-9 w-9 rounded-full text-ink hover:bg-muted"
+          >
+            <Share2 size={18} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             aria-label="Refresh list"
             onClick={() => void refetch()}
-            className="ml-auto h-9 w-9 rounded-full text-ink hover:bg-muted"
+            className="h-9 w-9 rounded-full text-ink hover:bg-muted"
           >
             <RefreshCw size={18} className={isRefetching ? "animate-spin" : ""} />
           </Button>
@@ -183,15 +274,18 @@ export function ProfileCircleScreen() {
                 <AvatarFallback>{(p.display_name ?? p.username).slice(0, 2)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-ink">{p.display_name ?? p.username}</p>
-                <p className="truncate text-xs text-muted-foreground">@{p.username}</p>
+                <p className="truncate text-sm font-medium text-ink">
+                  <Highlight text={p.display_name ?? p.username} query={debounced} />
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  @<Highlight text={p.username} query={debounced} />
+                </p>
               </div>
             </Link>
             <Button
               size="sm"
               variant={p.isFollowing ? "outline" : "default"}
               onClick={() => followMutation.mutate(p.user_id)}
-              disabled={followMutation.isPending}
               className="h-8 shrink-0 rounded-full text-xs"
             >
               {p.isFollowing ? "Following" : "Follow"}
