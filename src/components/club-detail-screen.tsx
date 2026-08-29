@@ -1,5 +1,5 @@
 import { Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, MessageSquare, Users, Lock, Globe } from "lucide-react";
+import { ArrowLeft, MessageSquare, Users, Lock, Globe, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -68,7 +68,15 @@ export function ClubDetailScreen() {
         </div>
         {club.description && <p className="mt-4 text-sm leading-relaxed text-ink">{club.description}</p>}
 
-        <div className="mt-5 flex gap-2">
+        <Link
+          to="/search"
+          search={{ club: club.id, clubName: club.name }}
+          className="mt-5 flex items-center gap-2 rounded-xl border border-border bg-parchment px-3 py-2.5 text-sm text-muted-foreground"
+        >
+          <Search size={16} /> Search in this circle — members, books, posts
+        </Link>
+
+        <div className="mt-3 flex gap-2">
           <Button
             onClick={() => membership.mutate()}
             disabled={membership.isPending}
