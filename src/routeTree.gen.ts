@@ -34,6 +34,7 @@ import { Route as AuthenticatedJournalSlugRouteImport } from './routes/_authenti
 import { Route as AuthenticatedMessagesIdRouteImport } from './routes/_authenticated.messages.$id'
 import { Route as AuthenticatedPostsIdRouteImport } from './routes/_authenticated.posts.$id'
 import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated.profile.index'
+import { Route as AuthenticatedProfileCircleRouteImport } from './routes/_authenticated.profile.circle'
 import { Route as AuthenticatedProfileNotificationsRouteImport } from './routes/_authenticated.profile.notifications'
 import { Route as AuthenticatedProfileOnboardingAnalyticsRouteImport } from './routes/_authenticated.profile.onboarding-analytics'
 import { Route as AuthenticatedProfileOnboardingProgressRouteImport } from './routes/_authenticated.profile.onboarding-progress'
@@ -170,6 +171,12 @@ const AuthenticatedProfileIndexRoute =
     path: '/profile/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProfileCircleRoute =
+  AuthenticatedProfileCircleRouteImport.update({
+    id: '/profile/circle',
+    path: '/profile/circle',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProfileNotificationsRoute =
   AuthenticatedProfileNotificationsRouteImport.update({
     id: '/profile/notifications',
@@ -236,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/journal/$slug': typeof AuthenticatedJournalSlugRoute
   '/messages/$id': typeof AuthenticatedMessagesIdRoute
   '/posts/$id': typeof AuthenticatedPostsIdRoute
+  '/profile/circle': typeof AuthenticatedProfileCircleRoute
   '/profile/notifications': typeof AuthenticatedProfileNotificationsRoute
   '/profile/onboarding-analytics': typeof AuthenticatedProfileOnboardingAnalyticsRoute
   '/profile/onboarding-progress': typeof AuthenticatedProfileOnboardingProgressRoute
@@ -268,6 +276,7 @@ export interface FileRoutesByTo {
   '/journal/$slug': typeof AuthenticatedJournalSlugRoute
   '/messages/$id': typeof AuthenticatedMessagesIdRoute
   '/posts/$id': typeof AuthenticatedPostsIdRoute
+  '/profile/circle': typeof AuthenticatedProfileCircleRoute
   '/profile/notifications': typeof AuthenticatedProfileNotificationsRoute
   '/profile/onboarding-analytics': typeof AuthenticatedProfileOnboardingAnalyticsRoute
   '/profile/onboarding-progress': typeof AuthenticatedProfileOnboardingProgressRoute
@@ -303,6 +312,7 @@ export interface FileRoutesById {
   '/_authenticated/journal/$slug': typeof AuthenticatedJournalSlugRoute
   '/_authenticated/messages/$id': typeof AuthenticatedMessagesIdRoute
   '/_authenticated/posts/$id': typeof AuthenticatedPostsIdRoute
+  '/_authenticated/profile/circle': typeof AuthenticatedProfileCircleRoute
   '/_authenticated/profile/notifications': typeof AuthenticatedProfileNotificationsRoute
   '/_authenticated/profile/onboarding-analytics': typeof AuthenticatedProfileOnboardingAnalyticsRoute
   '/_authenticated/profile/onboarding-progress': typeof AuthenticatedProfileOnboardingProgressRoute
@@ -338,6 +348,7 @@ export interface FileRouteTypes {
     | '/journal/$slug'
     | '/messages/$id'
     | '/posts/$id'
+    | '/profile/circle'
     | '/profile/notifications'
     | '/profile/onboarding-analytics'
     | '/profile/onboarding-progress'
@@ -370,6 +381,7 @@ export interface FileRouteTypes {
     | '/journal/$slug'
     | '/messages/$id'
     | '/posts/$id'
+    | '/profile/circle'
     | '/profile/notifications'
     | '/profile/onboarding-analytics'
     | '/profile/onboarding-progress'
@@ -404,6 +416,7 @@ export interface FileRouteTypes {
     | '/_authenticated/journal/$slug'
     | '/_authenticated/messages/$id'
     | '/_authenticated/posts/$id'
+    | '/_authenticated/profile/circle'
     | '/_authenticated/profile/notifications'
     | '/_authenticated/profile/onboarding-analytics'
     | '/_authenticated/profile/onboarding-progress'
@@ -600,6 +613,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile/circle': {
+      id: '/_authenticated/profile/circle'
+      path: '/profile/circle'
+      fullPath: '/profile/circle'
+      preLoaderRoute: typeof AuthenticatedProfileCircleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile/notifications': {
       id: '/_authenticated/profile/notifications'
       path: '/profile/notifications'
@@ -712,6 +732,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminOtpRoute: typeof AuthenticatedAdminOtpRoute
   AuthenticatedJournalSlugRoute: typeof AuthenticatedJournalSlugRoute
   AuthenticatedPostsIdRoute: typeof AuthenticatedPostsIdRoute
+  AuthenticatedProfileCircleRoute: typeof AuthenticatedProfileCircleRoute
   AuthenticatedProfileNotificationsRoute: typeof AuthenticatedProfileNotificationsRoute
   AuthenticatedProfileOnboardingAnalyticsRoute: typeof AuthenticatedProfileOnboardingAnalyticsRoute
   AuthenticatedProfileOnboardingProgressRoute: typeof AuthenticatedProfileOnboardingProgressRoute
@@ -735,6 +756,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminOtpRoute: AuthenticatedAdminOtpRoute,
   AuthenticatedJournalSlugRoute: AuthenticatedJournalSlugRoute,
   AuthenticatedPostsIdRoute: AuthenticatedPostsIdRoute,
+  AuthenticatedProfileCircleRoute: AuthenticatedProfileCircleRoute,
   AuthenticatedProfileNotificationsRoute:
     AuthenticatedProfileNotificationsRoute,
   AuthenticatedProfileOnboardingAnalyticsRoute:
