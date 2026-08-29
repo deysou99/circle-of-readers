@@ -3,10 +3,15 @@ import { UserProfileScreen } from "@/components/user-profile-screen";
 
 export const Route = createFileRoute("/_authenticated/readers/$id")({
   component: UserProfileRoute,
-  validateSearch: (search: Record<string, unknown>): { tab?: string } => {
+  validateSearch: (search: Record<string, unknown>): { tab?: string; s?: number } => {
     const tab = String(search["tab"] ?? "");
-    return tab ? { tab } : {};
+    const s = Number(search["s"]);
+    return {
+      ...(tab ? { tab } : {}),
+      ...(Number.isFinite(s) && s > 0 ? { s: Math.min(Math.round(s), 100000) } : {}),
+    };
   },
+
   head: () => ({
     meta: [
       { title: "Reader Profile — Circle" },

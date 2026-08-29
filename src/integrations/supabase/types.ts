@@ -142,6 +142,44 @@ export type Database = {
           },
         ]
       }
+      club_roster_access_log: {
+        Row: {
+          club_id: string | null
+          context: string | null
+          created_at: string
+          id: string
+          rows_returned: number
+          scope: string
+          viewer_id: string
+        }
+        Insert: {
+          club_id?: string | null
+          context?: string | null
+          created_at?: string
+          id?: string
+          rows_returned?: number
+          scope?: string
+          viewer_id: string
+        }
+        Update: {
+          club_id?: string | null
+          context?: string | null
+          created_at?: string
+          id?: string
+          rows_returned?: number
+          scope?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_roster_access_log_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clubs: {
         Row: {
           active_book_id: string | null
@@ -938,6 +976,54 @@ export type Database = {
         }
         Relationships: []
       }
+      security_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          created_at: string
+          detail: string | null
+          finding_id: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          level: string
+          occurrences: number
+          scanner: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          created_at?: string
+          detail?: string | null
+          finding_id: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          level?: string
+          occurrences?: number
+          scanner: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          created_at?: string
+          detail?: string | null
+          finding_id?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          level?: string
+          occurrences?: number
+          scanner?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       timeline_presets: {
         Row: {
           club_id: string | null
@@ -1075,7 +1161,13 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

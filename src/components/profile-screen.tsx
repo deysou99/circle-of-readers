@@ -26,7 +26,10 @@ export const PROFILE_TAB_IDS: ProfileTabId[] = TABS.map((t) => t.id);
 
 type TabId = ProfileTabId;
 
-export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId | undefined } = {}) {
+export function ProfileScreen({
+  initialTab,
+  initialScroll,
+}: { initialTab?: ProfileTabId | undefined; initialScroll?: number | undefined } = {}) {
   const fetchProfile = useServerFn(getMyProfile);
   const fetchBooks = useServerFn(getBooks);
   const fetchClubs = useServerFn(getClubs);
@@ -40,13 +43,27 @@ export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId | unde
   }, [initialTab]);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const scrollPositions = useRef<Partial<Record<TabId, number>>>({});
+  const scrollPositions = useRef<Partial<Record<TabId, number>>>(
+    initialScroll && initialTab ? ({ [initialTab]: initialScroll } as Partial<Record<TabId, number>>) : {},
+  );
 
   // Restore the scroll offset remembered for the tab we're switching into.
   useLayoutEffect(() => {
     const node = scrollRef.current;
     if (node) node.scrollTop = scrollPositions.current[tab] ?? 0;
   }, [tab]);
+
+  // A shared link can carry an exact offset — settle on it once content lands.
+  const restoredShared = useRef(false);
+  useEffect(() => {
+    if (restoredShared.current || !initialScroll) return;
+    const t = setTimeout(() => {
+      const node = scrollRef.current;
+      if (node) node.scrollTop = initialScroll;
+      restoredShared.current = true;
+    }, 250);
+    return () => clearTimeout(t);
+  }, [initialScroll]);
 
   function rememberScroll() {
     const node = scrollRef.current;
@@ -58,6 +75,7 @@ export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId | unde
     setTab(next);
     void navigate({ to: "/profile", search: { tab: next }, replace: true });
   }
+
 
   const { data, isError: profileError, refetch: refetchProfile } = useQuery({ queryKey: ["my-profile"], queryFn: () => fetchProfile() });
   const { data: booksData } = useQuery({ queryKey: ["books"], queryFn: () => fetchBooks() });
@@ -80,7 +98,10 @@ export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId | unde
   };
 
   async function shareProfile() {
-    const url = `${window.location.origin}/readers/${profile?.user_id ?? ""}?tab=${tab}`;
+    rememberScroll();
+    const offset = Math.round(scrollPositions.current[tab] ?? 0);
+    const params = new URLSearchParams({ tab, ...(offset > 0 ? { s: String(offset) } : {}) });
+    const url = `${window.location.origin}/readers/${profile?.user_id ?? ""}?${params.toString()}`;
     const shareData = {
       title: `${profile?.display_name ?? profile?.username ?? "My"} on Circle`,
       text: "Follow my reading on Circle by MyFlip",
@@ -89,15 +110,17 @@ export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId | unde
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share(shareData);
+        toast.success("Profile link shared");
         return;
       }
       await navigator.clipboard.writeText(url);
-      toast.success("Profile link copied");
+      toast.success("Profile link copied — it opens on this tab and spot");
     } catch (error) {
       if ((error as Error)?.name === "AbortError") return;
       toast.error("Couldn't share your profile link");
     }
   }
+
 
   return (
     <div className="min-h-screen bg-paper pb-6 pt-safe-top">

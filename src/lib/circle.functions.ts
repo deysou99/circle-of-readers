@@ -601,6 +601,15 @@ export const searchCircle = createServerFn({ method: "GET" })
         supabase.from("clubs").select("active_book_id").eq("id", clubScope).maybeSingle(),
       ]);
       scopeMemberIds = (members ?? []).map((m) => m.user_id);
+      // Audit trail: reading a circle's roster is recorded against the viewer.
+      await supabase.from("club_roster_access_log").insert({
+        viewer_id: userId,
+        club_id: clubScope,
+        scope: "club_roster",
+        rows_returned: scopeMemberIds.length,
+        context: "club_search",
+      });
+
       scopeBookIds = [
         ...new Set([
           ...(clubPosts ?? []).map((p) => p.book_id).filter((b): b is string => Boolean(b)),

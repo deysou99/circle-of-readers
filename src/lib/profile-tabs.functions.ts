@@ -63,39 +63,67 @@ export const getMyCircle = createServerFn({ method: "GET" })
 
 /* --------------------- paginated followers / following --------------------- */
 
+export type CircleSort = "alphabetical" | "newest" | "mutual";
+export type CircleFilter = "all" | "mutual" | "not_mutual";
+
 export const getCirclePage = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { tab: "followers" | "following"; page?: number; query?: string }) => ({
-    tab: data.tab === "following" ? ("following" as const) : ("followers" as const),
-    page: Math.max(0, Math.floor(data.page ?? 0)),
-    query: (data.query ?? "").trim().slice(0, 60),
-  }))
+  .inputValidator(
+    (data: {
+      tab: "followers" | "following";
+      page?: number;
+      query?: string;
+      sort?: CircleSort;
+      filter?: CircleFilter;
+    }) => ({
+      tab: data.tab === "following" ? ("following" as const) : ("followers" as const),
+      page: Math.max(0, Math.floor(data.page ?? 0)),
+      query: (data.query ?? "").trim().slice(0, 60),
+      sort: (["alphabetical", "newest", "mutual"] as const).includes(data.sort as CircleSort)
+        ? (data.sort as CircleSort)
+        : ("alphabetical" as const),
+      filter: (["all", "mutual", "not_mutual"] as const).includes(data.filter as CircleFilter)
+        ? (data.filter as CircleFilter)
+        : ("all" as const),
+    }),
+  )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const PAGE_SIZE = 20;
 
     const [{ data: followerRows }, { data: followingRows }] = await Promise.all([
-      supabase.from("follows").select("follower_id").eq("following_id", userId),
-      supabase.from("follows").select("following_id").eq("follower_id", userId),
+      supabase.from("follows").select("follower_id, created_at").eq("following_id", userId),
+      supabase.from("follows").select("following_id, created_at").eq("follower_id", userId),
     ]);
 
     const followerIds = (followerRows ?? []).map((r) => r.follower_id);
     const followingIds = (followingRows ?? []).map((r) => r.following_id);
     const followingSet = new Set(followingIds);
+    const followerSet = new Set(followerIds);
+
+    const followedAt = new Map<string, string>();
+    for (const r of followerRows ?? []) followedAt.set(r.follower_id, r.created_at);
+    const followingAt = new Map<string, string>();
+    for (const r of followingRows ?? []) followingAt.set(r.following_id, r.created_at);
+
     const ids = data.tab === "followers" ? followerIds : followingIds;
-
     const counts = { followers: followerIds.length, following: followingIds.length };
+    const empty = {
+      items: [] as Array<ProfileLite & { isFollowing: boolean; isMutual: boolean; connectedAt: string | null }>,
+      hasMore: false,
+      page: data.page,
+      counts,
+      matchCount: 0,
+    };
 
-    if (!ids.length) {
-      return { items: [] as Array<ProfileLite & { isFollowing: boolean }>, hasMore: false, page: data.page, counts };
-    }
+    if (!ids.length) return empty;
 
     let q = supabase
       .from("public_profiles")
       .select("user_id, username, display_name, avatar_url, bio")
       .in("user_id", ids)
       .order("username", { ascending: true })
-      .range(data.page * PAGE_SIZE, data.page * PAGE_SIZE + PAGE_SIZE);
+      .limit(1000);
 
     if (data.query) {
       const like = `%${data.query.replace(/[%_,]/g, "")}%`;
@@ -105,18 +133,46 @@ export const getCirclePage = createServerFn({ method: "GET" })
     const { data: rows, error } = await q;
     if (error) throw new Error("Couldn't load this list right now.");
 
-    const all = ((rows ?? []) as Array<Partial<ProfileLite>>).map((p) => ({
-      user_id: p.user_id ?? "",
-      username: p.username ?? "reader",
-      display_name: p.display_name ?? null,
-      avatar_url: p.avatar_url ?? null,
-      bio: p.bio ?? null,
-      isFollowing: followingSet.has(p.user_id ?? ""),
-    }));
+    let all = ((rows ?? []) as Array<Partial<ProfileLite>>).map((p) => {
+      const id = p.user_id ?? "";
+      return {
+        user_id: id,
+        username: p.username ?? "reader",
+        display_name: p.display_name ?? null,
+        avatar_url: p.avatar_url ?? null,
+        bio: p.bio ?? null,
+        isFollowing: followingSet.has(id),
+        isMutual: followingSet.has(id) && followerSet.has(id),
+        connectedAt: (data.tab === "followers" ? followedAt.get(id) : followingAt.get(id)) ?? null,
+      };
+    });
 
-    const hasMore = all.length > PAGE_SIZE;
-    return { items: all.slice(0, PAGE_SIZE), hasMore, page: data.page, counts };
+    if (data.filter === "mutual") all = all.filter((p) => p.isMutual);
+    if (data.filter === "not_mutual") all = all.filter((p) => !p.isMutual);
+
+    all.sort((a, b) => {
+      if (data.sort === "newest") return (b.connectedAt ?? "").localeCompare(a.connectedAt ?? "");
+      if (data.sort === "mutual" && a.isMutual !== b.isMutual) return a.isMutual ? -1 : 1;
+      return (a.display_name ?? a.username).localeCompare(b.display_name ?? b.username, undefined, {
+        sensitivity: "base",
+      });
+    });
+
+    const matchCount = all.length;
+    const start = data.page * PAGE_SIZE;
+    const items = all.slice(start, start + PAGE_SIZE);
+
+    // Audit trail: record that this reader viewed a membership roster.
+    await supabase.from("club_roster_access_log").insert({
+      viewer_id: userId,
+      scope: data.tab === "followers" ? "followers" : "following",
+      rows_returned: items.length,
+      context: data.query ? `query:${data.query}` : null,
+    });
+
+    return { items, hasMore: start + PAGE_SIZE < matchCount, page: data.page, counts, matchCount };
   });
+
 
 
 

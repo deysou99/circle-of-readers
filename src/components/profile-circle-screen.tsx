@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Loader2, RefreshCw, Search, Share2, X } from "lucide-react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getCirclePage } from "@/lib/profile-tabs.functions";
+import { getCirclePage, type CircleFilter, type CircleSort } from "@/lib/profile-tabs.functions";
 import { toggleFollow } from "@/lib/circle.functions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,28 @@ type CircleItem = {
   avatar_url: string | null;
   bio: string | null;
   isFollowing: boolean;
+  isMutual: boolean;
+  connectedAt: string | null;
 };
-type CirclePage = { items: CircleItem[]; hasMore: boolean; page: number; counts: { followers: number; following: number } };
+type CirclePage = {
+  items: CircleItem[];
+  hasMore: boolean;
+  page: number;
+  counts: { followers: number; following: number };
+  matchCount: number;
+};
+
+const SORTS: Array<{ id: CircleSort; label: string }> = [
+  { id: "alphabetical", label: "A–Z" },
+  { id: "newest", label: "Newest" },
+  { id: "mutual", label: "Mutuals first" },
+];
+
+const FILTERS: Array<{ id: CircleFilter; label: string }> = [
+  { id: "all", label: "Everyone" },
+  { id: "mutual", label: "Mutual" },
+  { id: "not_mutual", label: "Not mutual" },
+];
 
 function Highlight({ text, query }: { text: string; query: string }) {
   const q = query.trim();
@@ -40,7 +60,16 @@ function Highlight({ text, query }: { text: string; query: string }) {
 export function ProfileCircleScreen({
   initialTab,
   initialQuery,
-}: { initialTab?: CircleTab | undefined; initialQuery?: string | undefined } = {}) {
+  initialSort,
+  initialFilter,
+  initialScroll,
+}: {
+  initialTab?: CircleTab | undefined;
+  initialQuery?: string | undefined;
+  initialSort?: CircleSort | undefined;
+  initialFilter?: CircleFilter | undefined;
+  initialScroll?: number | undefined;
+} = {}) {
   const fetchPage = useServerFn(getCirclePage);
   const follow = useServerFn(toggleFollow);
   const queryClient = useQueryClient();
@@ -48,10 +77,16 @@ export function ProfileCircleScreen({
   const [tab, setTab] = useState<CircleTab>(initialTab ?? "followers");
   const [query, setQuery] = useState(initialQuery ?? "");
   const [debounced, setDebounced] = useState(initialQuery ?? "");
+  const [sort, setSort] = useState<CircleSort>(initialSort ?? "alphabetical");
+  const [filter, setFilter] = useState<CircleFilter>(initialFilter ?? "all");
   const [pullOffset, setPullOffset] = useState(0);
   const pullStart = useRef<number | null>(null);
   const scrollRef = useRef<HTMLElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const firstMatchRef = useRef<HTMLDivElement | null>(null);
+  const scrollOffset = useRef(0);
+  const restored = useRef(false);
+  const lastAutoScrolled = useRef("");
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query.trim()), 300);
@@ -62,11 +97,17 @@ export function ProfileCircleScreen({
   useEffect(() => {
     void navigate({
       to: "/profile/circle",
-      search: { tab, ...(debounced ? { q: debounced } : {}) },
+      search: {
+        tab,
+        ...(debounced ? { q: debounced } : {}),
+        ...(sort !== "alphabetical" ? { sort } : {}),
+        ...(filter !== "all" ? { filter } : {}),
+        ...(scrollOffset.current > 0 ? { s: Math.round(scrollOffset.current) } : {}),
+      },
       replace: true,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, debounced]);
+  }, [tab, debounced, sort, filter]);
 
   const {
     data,
@@ -79,9 +120,10 @@ export function ProfileCircleScreen({
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ["circle-page", tab, debounced],
+    queryKey: ["circle-page", tab, debounced, sort, filter],
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => fetchPage({ data: { tab, page: pageParam as number, query: debounced } }),
+    queryFn: ({ pageParam }) =>
+      fetchPage({ data: { tab, page: pageParam as number, query: debounced, sort, filter } }),
     getNextPageParam: (last) => (last.hasMore ? last.page + 1 : undefined),
   });
 
@@ -90,6 +132,7 @@ export function ProfileCircleScreen({
     onMutate: async (userId: string) => {
       await queryClient.cancelQueries({ queryKey: ["circle-page"] });
       const snapshot = queryClient.getQueriesData({ queryKey: ["circle-page"] });
+      let nowFollowing = false;
       queryClient.setQueriesData<{ pages: CirclePage[]; pageParams: unknown[] }>(
         { queryKey: ["circle-page"] },
         (old) =>
@@ -98,42 +141,73 @@ export function ProfileCircleScreen({
                 ...old,
                 pages: old.pages.map((p) => ({
                   ...p,
-                  items: p.items.map((it) =>
-                    it.user_id === userId ? { ...it, isFollowing: !it.isFollowing } : it,
-                  ),
+                  items: p.items.map((it) => {
+                    if (it.user_id !== userId) return it;
+                    nowFollowing = !it.isFollowing;
+                    return { ...it, isFollowing: !it.isFollowing };
+                  }),
                 })),
               }
             : old,
       );
-      return { snapshot };
+      return { snapshot, nowFollowing };
+    },
+    onSuccess: (_res, _userId, ctx) => {
+      toast.success(ctx?.nowFollowing ? "Following this reader" : "Unfollowed");
     },
     onError: (e: Error, _userId, ctx) => {
       ctx?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
-      toast.error(e.message || "Couldn't update that follow. Reverted.");
+      toast.error(e.message || "Couldn't update that follow — we put it back.");
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["circle-page"] }),
   });
 
   async function shareCircle() {
-    const params = new URLSearchParams({ tab, ...(debounced ? { q: debounced } : {}) });
+    const params = new URLSearchParams({
+      tab,
+      ...(debounced ? { q: debounced } : {}),
+      ...(sort !== "alphabetical" ? { sort } : {}),
+      ...(filter !== "all" ? { filter } : {}),
+      ...(scrollOffset.current > 0 ? { s: String(Math.round(scrollOffset.current)) } : {}),
+    });
     const url = `${window.location.origin}/profile/circle?${params.toString()}`;
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({ title: "My circle on Circle", url });
+        toast.success("Link shared");
         return;
       }
       await navigator.clipboard.writeText(url);
-      toast.success("Link copied");
+      toast.success("Link copied — it opens right where you left off");
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return;
       toast.error("Couldn't share this link");
     }
   }
 
-
   const pages = data?.pages ?? [];
   const list = pages.flatMap((p) => p.items);
   const counts = pages[0]?.counts ?? { followers: 0, following: 0 };
+  const matchCount = pages[0]?.matchCount ?? 0;
+  const firstMatchId = debounced ? list[0]?.user_id ?? null : null;
+
+  // Restore an exact scroll offset shared through the link.
+  useLayoutEffect(() => {
+    if (restored.current || isLoading || !list.length) return;
+    const node = scrollRef.current;
+    if (!node) return;
+    if (initialScroll && initialScroll > 0) node.scrollTop = initialScroll;
+    restored.current = true;
+  }, [isLoading, list.length, initialScroll]);
+
+  // Bring the first highlighted match into view when the search changes.
+  useEffect(() => {
+    if (!debounced || !firstMatchId) return;
+    const key = `${tab}:${debounced}:${firstMatchId}`;
+    if (lastAutoScrolled.current === key) return;
+    lastAutoScrolled.current = key;
+    firstMatchRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [debounced, firstMatchId, tab]);
 
   // infinite scroll
   useEffect(() => {
@@ -220,10 +294,48 @@ export function ProfileCircleScreen({
             </button>
           )}
         </div>
+
+        <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              aria-pressed={filter === f.id}
+              className={`whitespace-nowrap rounded-full border px-3 py-1 text-xs transition-colors ${
+                filter === f.id ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+          <span className="mx-1 h-4 w-px shrink-0 bg-border" />
+          {SORTS.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setSort(s.id)}
+              aria-pressed={sort === s.id}
+              className={`whitespace-nowrap rounded-full border px-3 py-1 text-xs transition-colors ${
+                sort === s.id ? "border-ink bg-ink text-paper" : "border-border text-muted-foreground"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {!isLoading && !isError && (debounced || filter !== "all") && (
+          <p aria-live="polite" className="mt-2 text-xs text-muted-foreground">
+            {matchCount} {matchCount === 1 ? "match" : "matches"}
+            {debounced ? ` for “${debounced}”` : ""}
+          </p>
+        )}
       </header>
 
       <main
         ref={scrollRef}
+        onScroll={(e) => {
+          scrollOffset.current = (e.target as HTMLElement).scrollTop;
+        }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -260,14 +372,20 @@ export function ProfileCircleScreen({
           <p className="pt-10 text-center text-sm text-muted-foreground">
             {debounced
               ? `No ${tab} match "${debounced}".`
-              : tab === "followers"
-                ? "No one follows you yet. Share your profile to grow your circle."
-                : "You're not following anyone yet."}
+              : filter !== "all"
+                ? `No ${tab} in this filter yet.`
+                : tab === "followers"
+                  ? "No one follows you yet. Share your profile to grow your circle."
+                  : "You're not following anyone yet."}
           </p>
         )}
 
         {list.map((p) => (
-          <div key={p.user_id} className="flex items-center gap-3 rounded-2xl border border-border bg-parchment p-3">
+          <div
+            key={p.user_id}
+            ref={p.user_id === firstMatchId ? firstMatchRef : undefined}
+            className="flex items-center gap-3 rounded-2xl border border-border bg-parchment p-3"
+          >
             <Link to="/readers/$id" params={{ id: p.user_id }} className="flex min-w-0 flex-1 items-center gap-3">
               <Avatar className="h-11 w-11">
                 <AvatarImage src={p.avatar_url ?? undefined} />
@@ -276,6 +394,11 @@ export function ProfileCircleScreen({
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-ink">
                   <Highlight text={p.display_name ?? p.username} query={debounced} />
+                  {p.isMutual && (
+                    <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Mutual
+                    </span>
+                  )}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   @<Highlight text={p.username} query={debounced} />
