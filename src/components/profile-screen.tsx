@@ -39,7 +39,22 @@ export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId | unde
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTab]);
 
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const scrollPositions = useRef<Partial<Record<TabId, number>>>({});
+
+  // Restore the scroll offset remembered for the tab we're switching into.
+  useLayoutEffect(() => {
+    const node = scrollRef.current;
+    if (node) node.scrollTop = scrollPositions.current[tab] ?? 0;
+  }, [tab]);
+
+  function rememberScroll() {
+    const node = scrollRef.current;
+    if (node) scrollPositions.current[tab] = node.scrollTop;
+  }
+
   function selectTab(next: TabId) {
+    rememberScroll();
     setTab(next);
     void navigate({ to: "/profile", search: { tab: next }, replace: true });
   }
