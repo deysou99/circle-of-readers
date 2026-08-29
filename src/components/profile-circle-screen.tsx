@@ -274,15 +274,18 @@ export function ProfileCircleScreen({
                 <AvatarFallback>{(p.display_name ?? p.username).slice(0, 2)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-ink">{p.display_name ?? p.username}</p>
-                <p className="truncate text-xs text-muted-foreground">@{p.username}</p>
+                <p className="truncate text-sm font-medium text-ink">
+                  <Highlight text={p.display_name ?? p.username} query={debounced} />
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  @<Highlight text={p.username} query={debounced} />
+                </p>
               </div>
             </Link>
             <Button
               size="sm"
               variant={p.isFollowing ? "outline" : "default"}
               onClick={() => followMutation.mutate(p.user_id)}
-              disabled={followMutation.isPending}
               className="h-8 shrink-0 rounded-full text-xs"
             >
               {p.isFollowing ? "Following" : "Follow"}
