@@ -79,7 +79,7 @@ function HomeScreenInner() {
           <span className="text-lg font-semibold text-ink" style={{ fontFamily: "var(--font-heading)" }}>Circle</span>
         </div>
         <div className="flex items-center gap-1">
-          <Link to="/search" aria-label="Search readers and circles">
+          <Link to="/search" search={{ mode: "people" }} aria-label="Search for people">
             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-ink hover:bg-muted">
               <UserSearch size={20} />
             </Button>
