@@ -288,7 +288,7 @@ export function ProfileCircleScreen({
             variant="ghost"
             size="icon"
             aria-label="Share this list"
-            onClick={() => void shareCircle()}
+            onClick={() => setShareOpen(true)}
             className="ml-auto h-9 w-9 rounded-full text-ink hover:bg-muted"
           >
             <Share2 size={18} />
