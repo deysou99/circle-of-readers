@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Search, X, Clock, Users, User, BookOpen, MessageSquareText } from "lucide-react";
+import { ArrowLeft, Search, X, Clock, Users, User, BookOpen, MessageSquareText, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   searchCircle,
@@ -13,12 +13,41 @@ import {
   clearRecentSearches,
   toggleFollow,
   toggleClubMembership,
+  logSearchClick,
 } from "@/lib/circle.functions";
 import { PostImage } from "@/components/post-image";
+import type { SearchNavState } from "@/lib/search-nav";
+import "@/lib/search-nav";
 import { toast } from "sonner";
 
 const FILTERS = ["All", "People", "Circles", "Books", "Posts"] as const;
 type Filter = (typeof FILTERS)[number];
+
+type SearchPage = Awaited<ReturnType<typeof searchCircle>>;
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Highlights every occurrence of the active query inside a text snippet. */
+function Highlight({ text, query }: { text: string; query: string }) {
+  const term = query.trim();
+  if (!term || term.length < 2 || !text) return <>{text}</>;
+  const parts = text.split(new RegExp(`(${escapeRegExp(term)})`, "ig"));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === term.toLowerCase() ? (
+          <mark key={i} className="rounded bg-primary/20 px-0.5 text-ink">
+            {part}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </>
+  );
+}
 
 export function SearchScreen() {
   const navigate = useNavigate();
@@ -26,6 +55,7 @@ export function SearchScreen() {
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
+  const sentinel = useRef<HTMLDivElement | null>(null);
 
   const search = useServerFn(searchCircle);
   const fetchRecents = useServerFn(getRecentSearches);
@@ -33,6 +63,7 @@ export function SearchScreen() {
   const wipeRecents = useServerFn(clearRecentSearches);
   const follow = useServerFn(toggleFollow);
   const joinClub = useServerFn(toggleClubMembership);
+  const trackClick = useServerFn(logSearchClick);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query.trim()), 300);
@@ -41,10 +72,34 @@ export function SearchScreen() {
 
   const { data: recents = [] } = useQuery({ queryKey: ["search-recents"], queryFn: () => fetchRecents() });
 
-  const { data, isFetching } = useQuery({
-    queryKey: ["circle-search", debounced, filter],
-    queryFn: () => search({ data: { query: debounced, type: filter } }),
+  const searchKey = useMemo(() => ["circle-search", debounced, filter] as const, [debounced, filter]);
+
+  const { data, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
+    queryKey: searchKey,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => search({ data: { query: debounced, type: filter, page: pageParam as number } }),
+    getNextPageParam: (lastPage: SearchPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
   });
+
+  const pages = useMemo(() => data?.pages ?? [], [data]);
+  const people = useMemo(() => pages.flatMap((p) => p.people), [pages]);
+  const clubs = useMemo(() => pages.flatMap((p) => p.clubs), [pages]);
+  const books = useMemo(() => pages.flatMap((p) => p.books), [pages]);
+  const posts = useMemo(() => pages.flatMap((p) => p.posts), [pages]);
+
+  // Infinite scroll: load the next page when the sentinel enters the viewport.
+  useEffect(() => {
+    const node = sentinel.current;
+    if (!node || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting) && !isFetchingNextPage) void fetchNextPage();
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const saveRecent = useMutation({
     mutationFn: (vars: { query: string; filter: Filter }) => storeRecent({ data: vars }),
@@ -62,26 +117,67 @@ export function SearchScreen() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["search-recents"] }),
   });
 
+  const patchPages = useCallback(
+    (fn: (page: SearchPage) => SearchPage) => {
+      queryClient.setQueriesData<{ pages: SearchPage[]; pageParams: unknown[] }>(
+        { queryKey: ["circle-search"] },
+        (old) => (old ? { ...old, pages: old.pages.map(fn) } : old),
+      );
+    },
+    [queryClient],
+  );
+
   const followMutation = useMutation({
     mutationFn: (userId: string) => follow({ data: { userId } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["circle-search"] }),
-    onError: (e: Error) => toast.error(e.message),
+    onMutate: async (userId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["circle-search"] });
+      const snapshot = queryClient.getQueriesData({ queryKey: ["circle-search"] });
+      patchPages((page) => ({
+        ...page,
+        people: page.people.map((p) => (p.user_id === userId ? { ...p, isFollowing: !p.isFollowing } : p)),
+      }));
+      return { snapshot };
+    },
+    onError: (e: Error, _userId, ctx) => {
+      ctx?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
+      toast.error(e.message);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["circle-search"] }),
   });
 
   const joinMutation = useMutation({
     mutationFn: (clubId: string) => joinClub({ data: { clubId } }),
-    onSuccess: (r) => {
+    onMutate: async (clubId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["circle-search"] });
+      const snapshot = queryClient.getQueriesData({ queryKey: ["circle-search"] });
+      patchPages((page) => ({
+        ...page,
+        clubs: page.clubs.map((c) =>
+          c.id === clubId
+            ? { ...c, isMember: !c.isMember, member_count: (c.member_count ?? 0) + (c.isMember ? -1 : 1) }
+            : c,
+        ),
+      }));
+      return { snapshot };
+    },
+    onError: (e: Error, _clubId, ctx) => {
+      ctx?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
+      toast.error(e.message);
+    },
+    onSuccess: (r) => toast.success(r.member ? "Joined circle" : "Left circle"),
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["circle-search"] });
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
-      toast.success(r.member ? "Joined circle" : "Left circle");
     },
-    onError: (e: Error) => toast.error(e.message),
   });
 
-  const people = useMemo(() => data?.people ?? [], [data]);
-  const clubs = useMemo(() => data?.clubs ?? [], [data]);
-  const books = useMemo(() => data?.books ?? [], [data]);
-  const posts = useMemo(() => data?.posts ?? [], [data]);
+  const navState: SearchNavState = { searchQuery: debounced, searchFilter: filter };
+
+  const onResultClick = (resultType: string, resultId: string, position: number) => {
+    void trackClick({ data: { query: debounced, filter, resultType, resultId, position } }).catch(() => {
+      /* telemetry is best-effort */
+    });
+  };
 
   const total = people.length + clubs.length + books.length + posts.length;
   const noResults = !isFetching && total === 0;
@@ -155,7 +251,9 @@ export function SearchScreen() {
           </section>
         )}
 
-        {isFetching && <p className="pt-6 text-center text-sm text-muted-foreground">Searching…</p>}
+        {isFetching && !isFetchingNextPage && (
+          <p className="pt-6 text-center text-sm text-muted-foreground">Searching…</p>
+        )}
 
         {people.length > 0 && (
           <section>
@@ -163,22 +261,31 @@ export function SearchScreen() {
               <User size={12} /> Readers
             </p>
             <div className="mt-3 space-y-3">
-              {people.map((r) => (
+              {people.map((r, i) => (
                 <div key={r.user_id} className="flex items-center gap-3 rounded-2xl border border-border bg-parchment p-3">
-                  <Link to="/readers/$id" params={{ id: r.user_id }} className="flex min-w-0 flex-1 items-center gap-3">
+                  <Link
+                    to="/readers/$id"
+                    params={{ id: r.user_id }}
+                    state={navState}
+                    onClick={() => onResultClick("person", r.user_id, i)}
+                    className="flex min-w-0 flex-1 items-center gap-3"
+                  >
                     <Avatar className="h-11 w-11">
                       <AvatarImage src={r.avatar_url ?? undefined} />
                       <AvatarFallback>{(r.display_name ?? r.username).slice(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-ink">{r.display_name ?? r.username}</p>
-                      <p className="truncate text-xs text-muted-foreground">@{r.username}</p>
+                      <p className="truncate text-sm font-medium text-ink">
+                        <Highlight text={r.display_name ?? r.username} query={debounced} />
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        @<Highlight text={r.username} query={debounced} />
+                      </p>
                     </div>
                   </Link>
                   <Button
                     size="sm"
                     variant={r.isFollowing ? "outline" : "default"}
-                    disabled={followMutation.isPending}
                     onClick={() => followMutation.mutate(r.user_id)}
                     className="h-8 shrink-0 rounded-full text-xs"
                   >
@@ -196,24 +303,31 @@ export function SearchScreen() {
               <Users size={12} /> Circles
             </p>
             <div className="mt-3 space-y-3">
-              {clubs.map((club) => (
+              {clubs.map((club, i) => (
                 <div key={club.id} className="flex items-center gap-3 rounded-2xl border border-border bg-parchment p-3">
-                  <Link to="/clubs/$id" params={{ id: club.id }} className="flex min-w-0 flex-1 items-center gap-3">
+                  <Link
+                    to="/clubs/$id"
+                    params={{ id: club.id }}
+                    state={navState}
+                    onClick={() => onResultClick("club", club.id, i)}
+                    className="flex min-w-0 flex-1 items-center gap-3"
+                  >
                     <Avatar className="h-11 w-11 rounded-xl">
                       <AvatarImage src={club.avatar_url ?? undefined} />
                       <AvatarFallback>{club.name.slice(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-ink">{club.name}</p>
+                      <p className="truncate text-sm font-medium text-ink">
+                        <Highlight text={club.name} query={debounced} />
+                      </p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {(club.member_count ?? 0).toLocaleString()} members • {club.category}
+                        {(club.member_count ?? 0).toLocaleString()} members • <Highlight text={club.category ?? ""} query={debounced} />
                       </p>
                     </div>
                   </Link>
                   <Button
                     size="sm"
                     variant={club.isMember ? "outline" : "default"}
-                    disabled={joinMutation.isPending}
                     onClick={() => joinMutation.mutate(club.id)}
                     className="h-8 shrink-0 rounded-full text-xs"
                   >
@@ -231,18 +345,24 @@ export function SearchScreen() {
               <BookOpen size={12} /> Books
             </p>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              {books.map((book) => (
+              {books.map((book, i) => (
                 <Link
                   key={book.id}
                   to="/books/$id"
                   params={{ id: book.id }}
+                  state={navState}
+                  onClick={() => onResultClick("book", book.id, i)}
                   className="rounded-2xl border border-border bg-parchment p-3 transition-colors hover:border-primary/30"
                 >
                   {book.cover_url && (
                     <img src={book.cover_url} alt={book.title} className="mx-auto h-32 w-22 rounded-lg object-cover" />
                   )}
-                  <p className="mt-2 line-clamp-1 text-xs font-medium text-ink">{book.title}</p>
-                  <p className="line-clamp-1 text-[11px] text-muted-foreground">{book.author}</p>
+                  <p className="mt-2 line-clamp-1 text-xs font-medium text-ink">
+                    <Highlight text={book.title} query={debounced} />
+                  </p>
+                  <p className="line-clamp-1 text-[11px] text-muted-foreground">
+                    <Highlight text={book.author} query={debounced} />
+                  </p>
                 </Link>
               ))}
             </div>
@@ -255,11 +375,13 @@ export function SearchScreen() {
               <MessageSquareText size={12} /> Posts & circle activity
             </p>
             <div className="mt-3 space-y-3">
-              {posts.map((p) => (
+              {posts.map((p, i) => (
                 <Link
                   key={p.id}
                   to="/posts/$id"
                   params={{ id: p.id }}
+                  state={navState}
+                  onClick={() => onResultClick("post", p.id, i)}
                   className="block rounded-2xl border border-border bg-parchment p-3"
                 >
                   <div className="flex items-center gap-2">
@@ -272,13 +394,37 @@ export function SearchScreen() {
                       {p.clubs ? ` • ${p.clubs.name}` : ""}
                     </p>
                   </div>
-                  <p className="mt-2 line-clamp-3 text-sm text-ink">{p.content}</p>
+                  <p className="mt-2 line-clamp-3 text-sm text-ink">
+                    <Highlight text={p.content} query={debounced} />
+                  </p>
                   {p.image_url && <PostImage path={p.image_url} className="mt-2 h-36 w-full rounded-xl object-cover" />}
-                  {p.books && <p className="mt-2 text-xs text-muted-foreground">📖 {p.books.title}</p>}
+                  {p.books && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      📖 <Highlight text={p.books.title} query={debounced} />
+                    </p>
+                  )}
                 </Link>
               ))}
             </div>
           </section>
+        )}
+
+        <div ref={sentinel} aria-hidden className="h-1" />
+
+        {isFetchingNextPage && (
+          <p className="flex items-center justify-center gap-2 pb-4 text-sm text-muted-foreground">
+            <Loader2 size={14} className="animate-spin" /> Loading more…
+          </p>
+        )}
+
+        {!isFetchingNextPage && hasNextPage && total > 0 && (
+          <Button
+            variant="outline"
+            onClick={() => void fetchNextPage()}
+            className="mb-4 h-10 w-full rounded-full border-border text-xs"
+          >
+            Load more results
+          </Button>
         )}
 
         {noResults && (
