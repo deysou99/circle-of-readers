@@ -242,7 +242,73 @@ export function OnboardingAnalyticsScreen() {
                 ))}
             </ul>
           </section>
+
+          <section className="px-4 pt-7">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              SMS delivery health
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Metric label="SMS attempts" value={data.sms.attempts} />
+              <Metric label="Failure rate %" value={data.sms.failureRate} />
+              <Metric label="In-app fallbacks" value={data.sms.fallbacks} />
+              <Metric label="Wrong codes" value={data.sms.verifyFailures} />
+            </div>
+            {data.sms.trend.length > 0 && (
+              <div className="mt-3 h-44 rounded-2xl border border-border bg-parchment p-3">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.sms.trend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="day" tick={{ fontSize: 9 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 10 }} width={24} />
+                    <Tooltip />
+                    <Bar dataKey="attempts" name="Attempts" fill="#B8B2A4" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="failures" name="Failures" fill="#E83227" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              {data.sms.blocked} attempt-limit blocks · {data.sms.phoneChanges} phone changes.
+            </p>
+          </section>
+
+          <section className="px-4 pt-7">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Retention after onboarding
+            </p>
+            {retention.isLoading ? (
+              <p className="mt-3 text-sm text-muted-foreground">Loading cohorts…</p>
+            ) : (retention.data?.summary.total ?? 0) === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                No completed onboarding cohorts match these filters yet.
+              </p>
+            ) : (
+              <>
+                <div className="mt-3 grid grid-cols-3 gap-3">
+                  <Metric label="Cohorts" value={retention.data!.summary.total} />
+                  <Metric label="Day 1 active" value={retention.data!.summary.day1} />
+                  <Metric label="Day 7 active" value={retention.data!.summary.day7} />
+                </div>
+                <ul className="mt-3 space-y-1.5">
+                  {retention.data!.cohorts.map((c) => (
+                    <li
+                      key={c.completedAt}
+                      className="flex items-center justify-between rounded-xl border border-border bg-parchment px-4 py-2.5 text-sm text-ink"
+                    >
+                      <span>
+                        {new Date(c.completedAt).toLocaleDateString()} · {c.signupMethod} · {c.device}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        D1 {c.day1 ? "✓" : "—"} · D7 {c.day7 ? "✓" : "—"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </section>
         </>
+
       )}
     </div>
   );
