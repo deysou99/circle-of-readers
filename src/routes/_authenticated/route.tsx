@@ -57,14 +57,9 @@ function AuthenticatedLayout() {
   }
 
   if (!isAuthenticated) {
-    return (
-      <div className="phone-shell flex min-h-screen items-center justify-center bg-paper px-6">
-        <div className="text-center">
-          <p className="text-ink">Please sign in to continue.</p>
-        </div>
-      </div>
-    );
+    return <SignInRedirect />;
   }
+
 
   if (onOnboarding) {
     return <Outlet />;
