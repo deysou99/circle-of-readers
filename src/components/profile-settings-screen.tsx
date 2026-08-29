@@ -73,7 +73,9 @@ export function ProfileSettingsScreen() {
       <section className="px-4 pt-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preferences</p>
         <div className="mt-2 space-y-1 rounded-2xl border border-border bg-parchment p-2">
-          <Row icon={Bell} label="Push notifications" right={<Switch />} />
+          <Link to="/profile/notifications" className="block">
+            <Row icon={Bell} label="Notification preferences" />
+          </Link>
           <Row icon={Moon} label="Dark mode" right={<Switch />} />
           <Row icon={Lock} label="Private profile" right={<Switch />} />
         </div>

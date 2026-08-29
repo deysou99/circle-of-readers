@@ -1,15 +1,19 @@
-import { Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { ArrowLeft, MessageSquare } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getReader, toggleFollow } from "@/lib/circle.functions";
+import { startDirectConversation } from "@/lib/social.functions";
+import { toast } from "sonner";
 
 export function UserProfileScreen() {
   const { id } = useParams({ from: "/_authenticated/readers/$id" });
   const fetchReader = useServerFn(getReader);
   const follow = useServerFn(toggleFollow);
+  const startDm = useServerFn(startDirectConversation);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -20,6 +24,12 @@ export function UserProfileScreen() {
   const followMutation = useMutation({
     mutationFn: () => follow({ data: { userId: id } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["reader", id] }),
+  });
+
+  const dmMutation = useMutation({
+    mutationFn: () => startDm({ data: { userId: id } }),
+    onSuccess: (res) => navigate({ to: "/messages/$id", params: { id: res.conversationId } }),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   if (isLoading) {
@@ -66,6 +76,14 @@ export function UserProfileScreen() {
           className={`mt-4 h-11 w-40 rounded-xl ${isFollowing ? "border-border bg-paper text-ink hover:bg-muted" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
         >
           {isFollowing ? "Following" : "Follow"}
+        </Button>
+        <Button
+          onClick={() => dmMutation.mutate()}
+          disabled={dmMutation.isPending}
+          variant="outline"
+          className="ml-2 mt-4 h-11 w-40 rounded-xl border-border bg-paper text-ink hover:bg-muted"
+        >
+          <MessageSquare size={18} className="mr-2" /> Message
         </Button>
       </section>
 

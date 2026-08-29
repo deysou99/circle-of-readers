@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getClubDetail, toggleClubMembership } from "@/lib/circle.functions";
 import { toast } from "sonner";
+import { ClubEvents } from "@/components/club-events";
 
 export function ClubDetailScreen() {
   const { id } = useParams({ from: "/_authenticated/clubs/$id" });
@@ -91,6 +92,8 @@ export function ClubDetailScreen() {
           </Link>
         </div>
       </section>
+
+      <ClubEvents clubId={club.id} canCreate={isMember} />
 
       {club.books && (
         <section className="px-4 pt-6">
