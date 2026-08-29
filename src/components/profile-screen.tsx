@@ -21,18 +21,33 @@ const TABS = [
   { id: "goodreads", label: "Goodreads", icon: Link2 },
 ] as const;
 
-type TabId = (typeof TABS)[number]["id"];
+export type ProfileTabId = (typeof TABS)[number]["id"];
+export const PROFILE_TAB_IDS: ProfileTabId[] = TABS.map((t) => t.id);
 
-export function ProfileScreen() {
+type TabId = ProfileTabId;
+
+export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId } = {}) {
   const fetchProfile = useServerFn(getMyProfile);
   const fetchBooks = useServerFn(getBooks);
   const fetchClubs = useServerFn(getClubs);
+  const navigate = useNavigate();
 
-  const [tab, setTab] = useState<TabId>("stats");
+  const [tab, setTab] = useState<TabId>(initialTab ?? "stats");
 
-  const { data } = useQuery({ queryKey: ["my-profile"], queryFn: () => fetchProfile() });
+  useEffect(() => {
+    if (initialTab && initialTab !== tab) setTab(initialTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTab]);
+
+  function selectTab(next: TabId) {
+    setTab(next);
+    void navigate({ to: "/profile", search: { tab: next }, replace: true });
+  }
+
+  const { data, isError: profileError, refetch: refetchProfile } = useQuery({ queryKey: ["my-profile"], queryFn: () => fetchProfile() });
   const { data: booksData } = useQuery({ queryKey: ["books"], queryFn: () => fetchBooks() });
-  const { data: clubsData } = useQuery({ queryKey: ["clubs"], queryFn: () => fetchClubs() });
+  const { data: clubsData, isLoading: clubsLoading, isError: clubsError, refetch: refetchClubs } = useQuery({ queryKey: ["clubs"], queryFn: () => fetchClubs() });
+
 
   const profile = data?.profile;
   const stats = data?.stats;
