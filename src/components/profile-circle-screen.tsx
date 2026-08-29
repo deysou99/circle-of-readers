@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyCircle } from "@/lib/profile-tabs.functions";
@@ -14,6 +14,7 @@ export function ProfileCircleScreen() {
   const follow = useServerFn(toggleFollow);
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"followers" | "following">("followers");
+  const [query, setQuery] = useState("");
 
   const { data, isLoading } = useQuery({ queryKey: ["my-circle"], queryFn: () => fetchCircle() });
 
@@ -23,7 +24,11 @@ export function ProfileCircleScreen() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const list = tab === "followers" ? data?.followers ?? [] : data?.following ?? [];
+  const source = tab === "followers" ? data?.followers ?? [] : data?.following ?? [];
+  const q = query.trim().toLowerCase();
+  const list = q
+    ? source.filter((p) => (p.display_name ?? "").toLowerCase().includes(q) || p.username.toLowerCase().includes(q))
+    : source;
 
   return (
     <div className="min-h-screen bg-paper pb-6 pt-safe-top">
@@ -45,13 +50,36 @@ export function ProfileCircleScreen() {
             </button>
           ))}
         </div>
+        <div className="relative mt-3">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Search ${tab}…`}
+            aria-label={`Search ${tab}`}
+            className="h-10 w-full rounded-xl border border-border bg-parchment pl-9 pr-9 text-sm text-ink outline-none placeholder:text-muted-foreground focus:border-primary"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-ink"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </header>
 
       <main className="space-y-3 px-4 pt-4">
         {isLoading && <p className="pt-6 text-center text-sm text-muted-foreground">Loading your circle…</p>}
         {!isLoading && list.length === 0 && (
           <p className="pt-10 text-center text-sm text-muted-foreground">
-            {tab === "followers" ? "No one follows you yet. Share your profile to grow your circle." : "You're not following anyone yet."}
+            {q
+              ? `No ${tab} match "${query}".`
+              : tab === "followers"
+                ? "No one follows you yet. Share your profile to grow your circle."
+                : "You're not following anyone yet."}
           </p>
         )}
         {list.map((p) => (
