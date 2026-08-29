@@ -55,12 +55,12 @@ function Highlight({ text, query }: { text: string; query: string }) {
   );
 }
 
-export function SearchScreen({ clubId, clubName }: { clubId?: string | undefined; clubName?: string | undefined } = {}) {
+export function SearchScreen({ clubId, clubName, peopleOnly = false }: { clubId?: string | undefined; clubName?: string | undefined; peopleOnly?: boolean } = {}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [filter, setFilter] = useState<Filter>("All");
+  const [filter, setFilter] = useState<Filter>(peopleOnly ? "People" : "All");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const sentinel = useRef<HTMLDivElement | null>(null);
 
@@ -321,7 +321,7 @@ export function SearchScreen({ clubId, clubName }: { clubId?: string | undefined
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === "Escape") setShowSuggestions(false);
               }}
-              placeholder={clubId ? "Search members, books and posts…" : "Search readers, circles, books, posts…"}
+              placeholder={peopleOnly ? "Search readers by name or @username…" : clubId ? "Search members, books and posts…" : "Search readers, circles, books, posts…"}
               aria-label="Search Circle"
               className="h-10 rounded-full border-border bg-parchment pl-9 pr-9 text-sm"
             />
@@ -365,6 +365,7 @@ export function SearchScreen({ clubId, clubName }: { clubId?: string | undefined
             )}
           </div>
         </div>
+        {!peopleOnly && (
         <div className="flex items-center gap-2 overflow-x-auto">
           {FILTERS.map((f) => (
             <button
@@ -402,6 +403,12 @@ export function SearchScreen({ clubId, clubName }: { clubId?: string | undefined
             </button>
           )}
         </div>
+        )}
+        {peopleOnly && (
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <User size={12} /> Finding people · use Discover for books, circles and events
+          </p>
+        )}
         {clubId && (
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Users size={12} /> Searching inside {clubName ?? "this circle"} · members, books and posts
