@@ -172,9 +172,18 @@ export function ProfileCircleScreen({
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Share this list"
+            onClick={() => void shareCircle()}
+            className="ml-auto h-9 w-9 rounded-full text-ink hover:bg-muted"
+          >
+            <Share2 size={18} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             aria-label="Refresh list"
             onClick={() => void refetch()}
-            className="ml-auto h-9 w-9 rounded-full text-ink hover:bg-muted"
+            className="h-9 w-9 rounded-full text-ink hover:bg-muted"
           >
             <RefreshCw size={18} className={isRefetching ? "animate-spin" : ""} />
           </Button>
