@@ -8,6 +8,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { getFeed, toggleLike } from "@/lib/circle.functions";
 import { ResumeOnboardingBanner } from "@/components/resume-onboarding-banner";
 import { CreatePostSheet } from "@/components/create-post-sheet";
+import { PostImage } from "@/components/post-image";
+
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
