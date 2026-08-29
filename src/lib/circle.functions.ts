@@ -451,31 +451,39 @@ export type SearchType = "All" | "People" | "Circles" | "Books" | "Posts";
 
 const SEARCH_TYPES: SearchType[] = ["All", "People", "Circles", "Books", "Posts"];
 
+const PAGE_SIZE = 12;
+
 export const searchCircle = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { query: string; type?: string }) => ({
+  .inputValidator((input: { query: string; type?: string; page?: number }) => ({
     query: (input.query ?? "").trim().slice(0, 100),
     type: (SEARCH_TYPES.includes((input.type ?? "All") as SearchType) ? input.type : "All") as SearchType,
+    page: Math.max(0, Math.min(50, Math.floor(input.page ?? 0))),
   }))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const q = data.query;
     const like = `%${q}%`;
     const type = data.type;
+    const page = data.page;
     const want = (t: SearchType) => type === "All" || type === t;
+
+    // Fetch one extra row per section to know whether another page exists.
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE; // inclusive range -> PAGE_SIZE + 1 rows
 
     const emptyRows = <T,>() => Promise.resolve({ data: [] as T[] });
 
     const booksP = want("Books")
       ? q
-        ? supabase.from("books").select("*").or(`title.ilike.${like},author.ilike.${like}`).limit(20)
-        : supabase.from("books").select("*").order("rating", { ascending: false }).limit(20)
+        ? supabase.from("books").select("*").or(`title.ilike.${like},author.ilike.${like}`).order("rating", { ascending: false }).range(from, to)
+        : supabase.from("books").select("*").order("rating", { ascending: false }).range(from, to)
       : emptyRows<never>();
 
     const clubsP = want("Circles")
       ? q
-        ? supabase.from("clubs").select("*").or(`name.ilike.${like},category.ilike.${like},description.ilike.${like}`).limit(20)
-        : supabase.from("clubs").select("*").order("member_count", { ascending: false }).limit(20)
+        ? supabase.from("clubs").select("*").or(`name.ilike.${like},category.ilike.${like},description.ilike.${like}`).order("member_count", { ascending: false }).range(from, to)
+        : supabase.from("clubs").select("*").order("member_count", { ascending: false }).range(from, to)
       : emptyRows<never>();
 
     const peopleP = want("People")
@@ -484,34 +492,44 @@ export const searchCircle = createServerFn({ method: "GET" })
             .from("profiles")
             .select("user_id, username, display_name, avatar_url, bio")
             .or(`username.ilike.${like},display_name.ilike.${like}`)
-            .limit(20)
-        : supabase.from("profiles").select("user_id, username, display_name, avatar_url, bio").limit(20)
+            .order("created_at", { ascending: false })
+            .range(from, to)
+        : supabase
+            .from("profiles")
+            .select("user_id, username, display_name, avatar_url, bio")
+            .order("created_at", { ascending: false })
+            .range(from, to)
       : emptyRows<never>();
+
+    const postSelect =
+      "id, content, created_at, user_id, likes_count, comments_count, image_url, books(id, title, author, cover_url), clubs(id, name)";
 
     const postsP = want("Posts")
       ? q
-        ? supabase
-            .from("posts")
-            .select("id, content, created_at, user_id, likes_count, comments_count, image_url, books(id, title, author, cover_url), clubs(id, name)")
-            .ilike("content", like)
-            .order("created_at", { ascending: false })
-            .limit(20)
-        : supabase
-            .from("posts")
-            .select("id, content, created_at, user_id, likes_count, comments_count, image_url, books(id, title, author, cover_url), clubs(id, name)")
-            .order("created_at", { ascending: false })
-            .limit(10)
+        ? supabase.from("posts").select(postSelect).ilike("content", like).order("created_at", { ascending: false }).range(from, to)
+        : supabase.from("posts").select(postSelect).order("created_at", { ascending: false }).range(from, to)
       : emptyRows<never>();
 
-    const [{ data: books }, { data: clubs }, { data: people }, { data: posts }] = await Promise.all([
+    const [{ data: booksRaw }, { data: clubsRaw }, { data: peopleRaw }, { data: postsRaw }] = await Promise.all([
       booksP,
       clubsP,
       peopleP,
       postsP,
     ]);
 
-    const peopleList = (people ?? []).filter((p) => p.user_id !== userId);
-    const postList = posts ?? [];
+    const trim = <T,>(rows: T[] | null) => {
+      const list = rows ?? [];
+      return { rows: list.slice(0, PAGE_SIZE), hasMore: list.length > PAGE_SIZE };
+    };
+
+    const booksPage = trim(booksRaw);
+    const clubsPage = trim(clubsRaw);
+    const peoplePage = trim(peopleRaw);
+    const postsPage = trim(postsRaw);
+
+    const peopleList = peoplePage.rows.filter((p) => p.user_id !== userId);
+    const postList = postsPage.rows;
+    const clubList = clubsPage.rows;
 
     const authorIds = [...new Set(postList.map((p) => p.user_id))];
     const [{ data: follows }, { data: memberships }, { data: authors }] = await Promise.all([
@@ -522,12 +540,12 @@ export const searchCircle = createServerFn({ method: "GET" })
             .eq("follower_id", userId)
             .in("following_id", peopleList.map((p) => p.user_id))
         : emptyRows<{ following_id: string }>(),
-      (clubs ?? []).length
+      clubList.length
         ? supabase
             .from("club_memberships")
             .select("club_id")
             .eq("user_id", userId)
-            .in("club_id", (clubs ?? []).map((c) => c.id))
+            .in("club_id", clubList.map((c) => c.id))
         : emptyRows<{ club_id: string }>(),
       authorIds.length
         ? supabase.from("profiles").select("user_id, username, display_name, avatar_url").in("user_id", authorIds)
@@ -538,13 +556,57 @@ export const searchCircle = createServerFn({ method: "GET" })
     const memberSet = new Set((memberships ?? []).map((m) => m.club_id));
     const authorMap = new Map((authors ?? []).map((a) => [a.user_id, a]));
 
+    const books = booksPage.rows;
+    const clubs = clubList.map((c) => ({ ...c, isMember: memberSet.has(c.id) }));
+    const people = peopleList.map((p) => ({ ...p, isFollowing: followingSet.has(p.user_id) }));
+    const posts = postList.map((p) => ({ ...p, author: authorMap.get(p.user_id) ?? null }));
+
+    const count = books.length + clubs.length + people.length + posts.length;
+
+    // Engagement telemetry: one row per page of results served.
+    await supabase.from("search_events").insert({
+      user_id: userId,
+      query: q,
+      filter: type,
+      event_type: page === 0 ? "query" : "load_more",
+      result_count: count,
+      position: page,
+    });
+
     return {
-      books: books ?? [],
-      clubs: (clubs ?? []).map((c) => ({ ...c, isMember: memberSet.has(c.id) })),
-      people: peopleList.map((p) => ({ ...p, isFollowing: followingSet.has(p.user_id) })),
-      posts: postList.map((p) => ({ ...p, author: authorMap.get(p.user_id) ?? null })),
+      page,
+      books,
+      clubs,
+      people,
+      posts,
+      count,
+      hasMore: booksPage.hasMore || clubsPage.hasMore || peoplePage.hasMore || postsPage.hasMore,
     };
   });
+
+export const logSearchClick = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { query: string; filter?: string; resultType: string; resultId: string; position?: number }) => ({
+    query: (input.query ?? "").trim().slice(0, 100),
+    filter: SEARCH_TYPES.includes((input.filter ?? "All") as SearchType) ? input.filter! : "All",
+    resultType: (input.resultType ?? "").slice(0, 20),
+    resultId: (input.resultId ?? "").slice(0, 64),
+    position: Math.max(0, Math.floor(input.position ?? 0)),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await supabase.from("search_events").insert({
+      user_id: userId,
+      query: data.query,
+      filter: data.filter,
+      event_type: "click",
+      result_type: data.resultType,
+      result_id: data.resultId,
+      position: data.position,
+    });
+    return { ok: true };
+  });
+
 
 /* ------------------------------ recent searches ----------------------------- */
 
