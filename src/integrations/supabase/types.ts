@@ -1024,6 +1024,39 @@ export type Database = {
         }
         Relationships: []
       }
+      share_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          match_count: number | null
+          query: string | null
+          surface: string
+          tab: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          match_count?: number | null
+          query?: string | null
+          surface?: string
+          tab?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          match_count?: number | null
+          query?: string | null
+          surface?: string
+          tab?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       timeline_presets: {
         Row: {
           club_id: string | null
