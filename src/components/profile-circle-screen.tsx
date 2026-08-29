@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Copy, Loader2, RefreshCw, Search, Share2, X } from "lucide-react";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { getCirclePage, type CircleFilter, type CircleSort } from "@/lib/profile-tabs.functions";
 import { toggleFollow } from "@/lib/circle.functions";
+import { getSharePreview, logShareEvent, type ShareEventType } from "@/lib/share.functions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -75,6 +76,9 @@ export function ProfileCircleScreen({
 } = {}) {
   const fetchPage = useServerFn(getCirclePage);
   const follow = useServerFn(toggleFollow);
+  const fetchSharePreview = useServerFn(getSharePreview);
+  const trackShare = useServerFn(logShareEvent);
+  const router = useRouter();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [tab, setTab] = useState<CircleTab>(initialTab ?? "followers");
@@ -197,28 +201,84 @@ export function ProfileCircleScreen({
     return `${window.location.origin}/profile/circle?${params.toString()}`;
   }, [tab, debounced, sort, filter, matchCount, shareOpen]);
 
-  const previewTitle = `My ${tab} on Circle`;
-  const previewDescription = debounced
-    ? `${matchCount} ${matchCount === 1 ? "match" : "matches"} for “${debounced}” in my ${tab}.`
-    : `${tab === "followers" ? counts.followers : counts.following} readers in my ${tab} on Circle.`;
+  // Server-generated (and server-cached) preview metadata for this link.
+  const previewQuery = useQuery({
+    queryKey: ["share-preview", tab, debounced],
+    queryFn: () => fetchSharePreview({ data: { tab, query: debounced } }),
+    enabled: shareOpen,
+    staleTime: 5 * 60 * 1000,
+  });
+  const preview = previewQuery.data;
+  const previewLoading = shareOpen && previewQuery.isLoading;
+  const previewTitle = preview?.title ?? (debounced ? `“${debounced}” in my ${tab} — Circle` : `My ${tab} — Circle`);
+  const previewMatches = preview?.matchCount ?? (previewQuery.isError ? null : matchCount);
+  const previewDescription =
+    preview?.description ??
+    (debounced
+      ? `Readers matching “${debounced}” in my ${tab} on Circle.`
+      : `${tab === "followers" ? counts.followers : counts.following} readers in my ${tab} on Circle.`);
+  const previewDegraded = Boolean(preview?.degraded) || previewQuery.isError;
+
+  function track(eventType: ShareEventType) {
+    void trackShare({
+      data: {
+        eventType,
+        surface: "profile_circle",
+        tab,
+        query: debounced,
+        ...(typeof previewMatches === "number" ? { matchCount: previewMatches } : {}),
+      },
+    }).catch(() => undefined);
+  }
+
+  // Analytics: one view event per opening of the share sheet.
+  useEffect(() => {
+    if (!shareOpen) return;
+    track("preview_view");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shareOpen]);
+
+  /** Warm the shared destination so tapping the preview opens instantly. */
+  async function prefetchSharedView() {
+    track("preview_tap");
+    const search = {
+      tab,
+      ...(debounced ? { q: debounced } : {}),
+      ...(sort !== "alphabetical" ? { sort } : {}),
+      ...(filter !== "all" ? { filter } : {}),
+      ...(scrollOffset.current > 0 ? { s: Math.round(scrollOffset.current) } : {}),
+      ...(typeof previewMatches === "number" && previewMatches > 0 ? { n: previewMatches } : {}),
+    };
+    await Promise.allSettled([
+      router.preloadRoute({ to: "/profile/circle", search }),
+      queryClient.prefetchInfiniteQuery({
+        queryKey: ["circle-page", tab, debounced, sort, filter],
+        initialPageParam: 0,
+        queryFn: ({ pageParam }) =>
+          fetchPage({ data: { tab, page: pageParam as number, query: debounced, sort, filter } }),
+      }),
+    ]);
+  }
 
   async function shareCircle() {
     try {
+      track("share_open");
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({ title: previewTitle, text: previewDescription, url: shareUrl });
         toast.success("Link shared");
         setShareOpen(false);
         return;
       }
-      await copyShareLink();
+      await copyShareLink({ silentTracking: true });
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return;
       toast.error("Couldn't share this link");
     }
   }
 
-  async function copyShareLink() {
+  async function copyShareLink(opts?: { silentTracking?: boolean }) {
     try {
+      if (!opts?.silentTracking) track("copy_click");
       await navigator.clipboard.writeText(shareUrl);
       toast.success("Link copied — it opens right where you left off");
       setShareOpen(false);
@@ -226,6 +286,7 @@ export function ProfileCircleScreen({
       toast.error("Couldn't copy this link");
     }
   }
+
 
   // Restore an exact scroll offset shared through the link.
   useLayoutEffect(() => {
@@ -492,21 +553,48 @@ export function ProfileCircleScreen({
             <DialogTitle className="text-base">Share this view</DialogTitle>
           </DialogHeader>
           <p className="text-xs text-muted-foreground">This is how the link will look before anyone opens it.</p>
-          <div className="rounded-xl border border-border bg-parchment p-3">
+          <button
+            type="button"
+            onClick={() => void prefetchSharedView()}
+            onMouseEnter={() => void prefetchSharedView()}
+            className="w-full rounded-xl border border-border bg-parchment p-3 text-left transition-colors hover:border-primary/40"
+            aria-label="Preview the shared view"
+          >
             <p className="text-[10px] uppercase tracking-wide text-muted-foreground">circle.myflip</p>
-            <p className="mt-1 text-sm font-semibold text-ink">{previewTitle}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{previewDescription}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] capitalize text-muted-foreground">{tab}</span>
-              {debounced && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">“{debounced}”</span>
-              )}
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                {matchCount} {matchCount === 1 ? "match" : "matches"}
-              </span>
-            </div>
+            {previewLoading ? (
+              <div className="mt-1 space-y-2" aria-busy="true">
+                <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-full animate-pulse rounded bg-muted" />
+                <div className="flex gap-1.5">
+                  <div className="h-4 w-16 animate-pulse rounded-full bg-muted" />
+                  <div className="h-4 w-20 animate-pulse rounded-full bg-muted" />
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="mt-1 text-sm font-semibold text-ink">{previewTitle}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{previewDescription}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] capitalize text-muted-foreground">{tab}</span>
+                  {debounced && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">“{debounced}”</span>
+                  )}
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                    {typeof previewMatches === "number"
+                      ? `${previewMatches} ${previewMatches === 1 ? "match" : "matches"}`
+                      : "Match count unavailable"}
+                  </span>
+                </div>
+                {previewDegraded && (
+                  <p className="mt-2 text-[10px] text-muted-foreground">
+                    We couldn’t count matches just now — the link still opens the right view.
+                  </p>
+                )}
+              </>
+            )}
             <p className="mt-2 truncate text-[10px] text-muted-foreground">{shareUrl}</p>
-          </div>
+          </button>
+
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1 rounded-full" onClick={() => void copyShareLink()}>
               <Copy size={16} className="mr-1.5" /> Copy link
