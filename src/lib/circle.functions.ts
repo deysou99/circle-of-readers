@@ -7,7 +7,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data } = await supabase.rpc("get_my_profile");
+    const { data } = await readOwnProfileServer(userId);
 
 
     const [{ count: followers }, { count: following }, { count: finished }, { count: clubs }] =
@@ -278,7 +278,7 @@ export const getBooks = createServerFn({ method: "GET" })
     const [{ data: books }, { data: shelf }, { data: profile }] = await Promise.all([
       supabase.from("books").select("*").order("title"),
       supabase.from("user_books").select("*").eq("user_id", userId),
-      supabase.rpc("get_my_profile"),
+      readOwnProfileServer(userId),
     ]);
     return {
       books: books ?? [],

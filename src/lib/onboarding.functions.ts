@@ -26,7 +26,7 @@ export const getOnboardingState = createServerFn({ method: "GET" })
     };
 
     const [{ data: profile }, { data: reader }] = await Promise.all([
-      supabase.rpc("get_my_profile"),
+      readOwnProfileServer(userId),
       supabase.from("reader_profiles").select("*").eq("user_id", userId).maybeSingle(),
     ]);
 
@@ -254,7 +254,7 @@ export const syncGoodreads = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { extractGoodreadsUserId, fetchGoodreadsSummary } = await import("@/lib/goodreads.server");
 
-    const { data: profile } = await supabase.rpc("get_my_profile");
+    const { data: profile } = await readOwnProfileServer(userId);
     if (!profile?.goodreads_connected || !profile.goodreads_profile) {
       throw new Error("Connect your Goodreads profile first, then sync.");
     }

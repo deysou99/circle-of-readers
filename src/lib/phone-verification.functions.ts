@@ -33,7 +33,7 @@ export const getPhoneOtpStatus = createServerFn({ method: "GET" })
     const { isSmsConfigured } = await import("@/lib/sms.server");
 
     const [{ data: profile }, { data: row }] = await Promise.all([
-      supabase.rpc("get_my_profile"),
+      readOwnProfileServer(userId),
       supabaseAdmin
         .from("phone_verifications")
         .select("phone, attempts, expires_at, created_at, consumed_at")
