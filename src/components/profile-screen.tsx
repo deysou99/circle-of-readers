@@ -181,7 +181,8 @@ export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId | unde
         </div>
 
         <div
-          key={tab}
+          ref={scrollRef}
+          onScroll={rememberScroll}
           className="max-h-[calc(100dvh-14rem)] overflow-y-auto overscroll-contain px-4 pb-8 pt-4"
         >
           {tab === "stats" && <ProfileStatsTab />}
