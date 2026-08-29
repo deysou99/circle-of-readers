@@ -46,10 +46,10 @@ async def main() -> None:
             )
 
             await page.goto(f"{BASE}{route}", wait_until="domcontentloaded")
-            await page.wait_for_timeout(1500)
+            await page.wait_for_timeout(2000)
             # Hard reload to exercise the cold-start guard path again.
             await page.reload(wait_until="domcontentloaded")
-            await page.wait_for_timeout(1500)
+            await page.wait_for_timeout(3000)
 
             body = (await page.inner_text("body")).strip()
             url = page.url
