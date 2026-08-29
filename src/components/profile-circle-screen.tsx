@@ -83,6 +83,8 @@ export function ProfileCircleScreen({
   const [sort, setSort] = useState<CircleSort>(initialSort ?? "alphabetical");
   const [filter, setFilter] = useState<CircleFilter>(initialFilter ?? "all");
   const [pullOffset, setPullOffset] = useState(0);
+  const [shareOpen, setShareOpen] = useState(false);
+
   const pullStart = useRef<number | null>(null);
   const scrollRef = useRef<HTMLElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
