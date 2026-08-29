@@ -741,6 +741,11 @@ export const searchCircle = createServerFn({ method: "GET" })
     const followingSet = new Set((follows ?? []).map((f) => f.following_id));
     const memberSet = new Set((memberships ?? []).map((m) => m.club_id));
     const authorMap = new Map((authors ?? []).map((a) => [a.user_id, a]));
+    const followsYouSet = new Set((followsBack ?? []).map((f) => f.follower_id));
+    const activePeopleSet = new Set((activePeople ?? []).map((p) => p.user_id));
+    const activeClubSet = new Set((activeClubs ?? []).map((p) => p.club_id).filter((c): c is string => Boolean(c)));
+    const boostedPeopleSet = new Set(boostPeople.map((p) => p.user_id));
+    const boostedClubSet = new Set(boostClubs.map((c) => c.id));
 
     const books: BookRow[] = booksPage.rows;
     const clubs = clubList.map((c) => ({
