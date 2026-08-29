@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Search, X, Clock, Users, User, BookOpen, MessageSquareText, Loader2 } from "lucide-react";
+import { ArrowLeft, Search, X, Clock, Users, User, BookOpen, MessageSquareText, Loader2, Bookmark, BookmarkPlus, EyeOff, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +16,10 @@ import {
   logSearchClick,
   searchSuggestions,
   logSearchEngagement,
+  getSavedSearches,
+  saveSearch,
+  deleteSavedSearch,
+  hideSearchResult,
 } from "@/lib/circle.functions";
 import { PostImage } from "@/components/post-image";
 import type { SearchNavState } from "@/lib/search-nav";
@@ -51,7 +55,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
   );
 }
 
-export function SearchScreen() {
+export function SearchScreen({ clubId, clubName }: { clubId?: string; clubName?: string } = {}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
@@ -69,6 +73,10 @@ export function SearchScreen() {
   const trackClick = useServerFn(logSearchClick);
   const fetchSuggestions = useServerFn(searchSuggestions);
   const trackEngagement = useServerFn(logSearchEngagement);
+  const fetchSaved = useServerFn(getSavedSearches);
+  const storeSaved = useServerFn(saveSearch);
+  const removeSaved = useServerFn(deleteSavedSearch);
+  const hideResult = useServerFn(hideSearchResult);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query.trim()), 300);
@@ -77,12 +85,13 @@ export function SearchScreen() {
 
   const { data: recents = [] } = useQuery({ queryKey: ["search-recents"], queryFn: () => fetchRecents() });
 
-  const searchKey = useMemo(() => ["circle-search", debounced, filter] as const, [debounced, filter]);
+  const searchKey = useMemo(() => ["circle-search", debounced, filter, clubId ?? "global"] as const, [debounced, filter, clubId]);
 
   const { data, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
     queryKey: searchKey,
     initialPageParam: null as string | null,
-    queryFn: ({ pageParam }) => search({ data: { query: debounced, type: filter, cursor: pageParam as string | null } }),
+    queryFn: ({ pageParam }) =>
+      search({ data: { query: debounced, type: filter, cursor: pageParam as string | null, clubId: clubId ?? null } }),
     getNextPageParam: (lastPage: SearchPage) => lastPage.nextCursor ?? undefined,
   });
 
@@ -191,6 +200,44 @@ export function SearchScreen() {
     },
   });
 
+  /* ------------------------------ saved searches ---------------------------- */
+  const { data: saved = [] } = useQuery({ queryKey: ["search-saved"], queryFn: () => fetchSaved() });
+
+  const saveThisSearch = useMutation({
+    mutationFn: () => storeSaved({ data: { query: debounced, filter } }),
+    onSuccess: () => {
+      toast.success("Search saved");
+      queryClient.invalidateQueries({ queryKey: ["search-saved"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const dropSaved = useMutation({
+    mutationFn: (id: string) => removeSaved({ data: { id } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["search-saved"] }),
+  });
+
+  /* ------------------- hide / exclude unwanted search results ---------------- */
+  const hideMutation = useMutation({
+    mutationFn: (vars: { targetType: "person" | "circle"; targetId: string }) => hideResult({ data: vars }),
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({ queryKey: ["circle-search"] });
+      const snapshot = queryClient.getQueriesData({ queryKey: ["circle-search"] });
+      patchPages((page) => ({
+        ...page,
+        people: vars.targetType === "person" ? page.people.filter((p) => p.user_id !== vars.targetId) : page.people,
+        clubs: vars.targetType === "circle" ? page.clubs.filter((c) => c.id !== vars.targetId) : page.clubs,
+      }));
+      return { snapshot };
+    },
+    onError: (e: Error, _vars, ctx) => {
+      ctx?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
+      toast.error(e.message);
+    },
+    onSuccess: () => toast.success("Hidden from your future searches"),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["circle-search"] }),
+  });
+
   /* ---- engagement: dwell time + deepest scroll depth per query/filter ---- */
   const engagement = useRef({ start: Date.now(), deepest: 0, seen: 0 });
   const flushEngagement = useCallback(
@@ -239,6 +286,17 @@ export function SearchScreen() {
     });
   };
 
+  const Badges = ({ items }: { items: string[] }) =>
+    items.length ? (
+      <span className="mt-1 flex flex-wrap gap-1">
+        {items.map((b) => (
+          <span key={b} className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+            {b}
+          </span>
+        ))}
+      </span>
+    ) : null;
+
   const total = people.length + clubs.length + books.length + posts.length;
   engagement.current.seen = Math.max(engagement.current.seen, total);
   const noResults = !isFetching && total === 0;
@@ -247,7 +305,7 @@ export function SearchScreen() {
     <div className="min-h-screen bg-paper pb-24 pt-safe-top">
       <header className="sticky top-0 z-40 space-y-3 border-b border-border bg-paper/95 px-4 py-3 backdrop-blur-md">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate({ to: "/home" })} aria-label="Back">
+          <button onClick={() => (clubId ? navigate({ to: "/clubs/$id", params: { id: clubId } }) : navigate({ to: "/home" }))} aria-label="Back">
             <ArrowLeft size={22} className="text-ink" />
           </button>
           <div className="relative flex-1">
@@ -263,7 +321,7 @@ export function SearchScreen() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === "Escape") setShowSuggestions(false);
               }}
-              placeholder="Search readers, circles, books, posts…"
+              placeholder={clubId ? "Search members, books and posts…" : "Search readers, circles, books, posts…"}
               aria-label="Search Circle"
               className="h-10 rounded-full border-border bg-parchment pl-9 pr-9 text-sm"
             />
@@ -334,10 +392,52 @@ export function SearchScreen() {
               Clear all
             </button>
           )}
+          {debounced.length >= 2 && !clubId && (
+            <button
+              onClick={() => saveThisSearch.mutate()}
+              disabled={saveThisSearch.isPending}
+              className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-paper px-3 py-1.5 text-xs font-medium text-ink hover:bg-muted"
+            >
+              <BookmarkPlus size={13} /> Save
+            </button>
+          )}
         </div>
+        {clubId && (
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Users size={12} /> Searching inside {clubName ?? "this circle"} · members, books and posts
+          </p>
+        )}
       </header>
 
       <main className="space-y-6 px-4 pt-4">
+        {!debounced && !clubId && saved.length > 0 && (
+          <section>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Saved</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {saved.map((sv) => (
+                <span
+                  key={sv.id}
+                  className="flex items-center gap-1.5 rounded-full border border-border bg-parchment px-3 py-1.5 text-xs text-ink"
+                >
+                  <button
+                    onClick={() => {
+                      setFilter((FILTERS as readonly string[]).includes(sv.filter) ? (sv.filter as Filter) : "All");
+                      setQuery(sv.query);
+                    }}
+                    className="flex items-center gap-1.5"
+                  >
+                    <Bookmark size={12} className="text-primary" />
+                    {sv.name}
+                  </button>
+                  <button onClick={() => dropSaved.mutate(sv.id)} aria-label={`Delete saved search ${sv.name}`}>
+                    <Trash2 size={12} className="text-muted-foreground hover:text-destructive" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
+
         {!debounced && recents.length > 0 && (
           <section>
             <div className="flex items-center justify-between">
@@ -393,6 +493,7 @@ export function SearchScreen() {
                       <p className="truncate text-xs text-muted-foreground">
                         @<Highlight text={r.username} query={debounced} />
                       </p>
+                      <Badges items={r.badges} />
                     </div>
                   </Link>
                   <Button
@@ -403,6 +504,13 @@ export function SearchScreen() {
                   >
                     {r.isFollowing ? "Following" : "Follow"}
                   </Button>
+                  <button
+                    onClick={() => hideMutation.mutate({ targetType: "person", targetId: r.user_id })}
+                    aria-label={`Hide ${r.display_name ?? r.username} from search`}
+                    className="shrink-0 text-muted-foreground hover:text-ink"
+                  >
+                    <EyeOff size={16} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -435,6 +543,7 @@ export function SearchScreen() {
                       <p className="truncate text-xs text-muted-foreground">
                         {(club.member_count ?? 0).toLocaleString()} members • <Highlight text={club.category ?? ""} query={debounced} />
                       </p>
+                      <Badges items={club.badges} />
                     </div>
                   </Link>
                   <Button
@@ -445,6 +554,13 @@ export function SearchScreen() {
                   >
                     {club.isMember ? "Joined" : "Join"}
                   </Button>
+                  <button
+                    onClick={() => hideMutation.mutate({ targetType: "circle", targetId: club.id })}
+                    aria-label={`Hide ${club.name} from search`}
+                    className="shrink-0 text-muted-foreground hover:text-ink"
+                  >
+                    <EyeOff size={16} />
+                  </button>
                 </div>
               ))}
             </div>
