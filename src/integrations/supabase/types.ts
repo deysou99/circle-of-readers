@@ -547,6 +547,30 @@ export type Database = {
         }
         Relationships: []
       }
+      search_hidden: {
+        Row: {
+          created_at: string
+          id: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          target_id?: string
+          target_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       search_recents: {
         Row: {
           created_at: string
@@ -567,6 +591,36 @@ export type Database = {
           filter?: string
           id?: string
           query?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      search_saved: {
+        Row: {
+          created_at: string
+          filter: string
+          id: string
+          name: string
+          query: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filter?: string
+          id?: string
+          name: string
+          query?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filter?: string
+          id?: string
+          name?: string
+          query?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
