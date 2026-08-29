@@ -176,26 +176,44 @@ export const getFeed = createServerFn({ method: "GET" })
 
 export const createPost = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { content: string; bookId?: string | null; clubId?: string | null; rating?: number | null }) => {
-    if (!input.content?.trim()) throw new Error("Write something first");
-    return input;
+  .inputValidator((input: { content: string; bookId?: string | null; clubId?: string | null; rating?: number | null; imagePath?: string | null }) => {
+    const content = (input.content ?? "").trim();
+    if (!content) throw new Error("Write something before publishing");
+    if (content.length > 2000) throw new Error("Posts are limited to 2000 characters");
+    if (input.rating != null && (input.rating < 1 || input.rating > 5)) throw new Error("Rating must be between 1 and 5");
+    if (input.rating != null && !input.bookId) throw new Error("Attach a book to rate it");
+    return { ...input, content };
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    if (data.imagePath && !data.imagePath.startsWith(`${userId}/`)) {
+      throw new Error("Invalid attachment");
+    }
+    if (data.clubId) {
+      const { data: membership } = await supabase
+        .from("club_memberships")
+        .select("id")
+        .eq("club_id", data.clubId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!membership) throw new Error("Join the circle before posting to it");
+    }
     const { data: post, error } = await supabase
       .from("posts")
       .insert({
         user_id: userId,
-        content: data.content.trim(),
+        content: data.content,
         book_id: data.bookId ?? null,
         club_id: data.clubId ?? null,
         rating: data.rating ?? null,
+        image_url: data.imagePath ?? null,
       })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
     return post;
   });
+
 
 export const toggleLike = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
