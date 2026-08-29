@@ -547,43 +547,7 @@ export type Database = {
       }
     }
     Functions: {
-      get_my_profile: {
-        Args: never
-        Returns: {
-          avatar_url: string | null
-          bio: string | null
-          created_at: string
-          display_name: string | null
-          email: string | null
-          favorite_genres: string[]
-          first_name: string | null
-          goodreads_connected: boolean
-          goodreads_last_sync_at: string | null
-          goodreads_profile: string | null
-          goodreads_stats: Json
-          goodreads_user_id: string | null
-          goodreads_verified_at: string | null
-          id: string
-          last_name: string | null
-          onboarded: boolean
-          onboarding_step: number
-          phone: string | null
-          phone_verified: boolean
-          phone_verified_at: string | null
-          profile_completed: boolean
-          reading_goal: number | null
-          reading_pace: string | null
-          updated_at: string
-          user_id: string
-          username: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "profiles"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
