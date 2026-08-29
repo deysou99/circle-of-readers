@@ -83,8 +83,7 @@ export function usePushAlerts() {
 
   useEffect(() => {
     if (!pushOn) return;
-    const list = (conversations ?? []) as { id: string; isGroup?: boolean; title?: string | null; lastMessage?: { id: string; content: string } | null; unread?: number }[];
-    for (const c of list) {
+    for (const c of conversations ?? []) {
       const last = c.lastMessage;
       if (!last) continue;
       if (!primed.current) {
@@ -94,9 +93,9 @@ export function usePushAlerts() {
       if (seenMessages.current.has(last.id)) continue;
       seenMessages.current.add(last.id);
       if (!c.unread) continue;
-      const allowed = c.isGroup ? (prefs as Prefs)?.group_messages : (prefs as Prefs)?.direct_messages;
+      const allowed = c.kind === "club" ? (prefs as Prefs)?.group_messages : (prefs as Prefs)?.direct_messages;
       if (!allowed) continue;
-      notify(c.title ?? "New message", last.content.slice(0, 120), `conversation-${c.id}`);
+      notify(c.title ?? c.club?.name ?? "New message", last.content.slice(0, 120), `conversation-${c.id}`);
     }
     primed.current = true;
   }, [conversations, pushOn, prefs]);

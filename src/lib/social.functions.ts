@@ -238,7 +238,7 @@ export const getConversations = createServerFn({ method: "GET" })
         kind: c.kind,
         title: c.title,
         club: c.clubs,
-        lastMessage: last ? { content: last.content, createdAt: last.created_at, mine: last.sender_id === userId } : null,
+        lastMessage: last ? { id: last.id, content: last.content, createdAt: last.created_at, mine: last.sender_id === userId } : null,
         lastMessageAt: c.last_message_at,
         unread,
         others,
