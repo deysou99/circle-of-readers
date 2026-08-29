@@ -61,7 +61,64 @@ export const getMyCircle = createServerFn({ method: "GET" })
     };
   });
 
-/* --------------------------------- reviews --------------------------------- */
+/* --------------------- paginated followers / following --------------------- */
+
+export const getCirclePage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { tab: "followers" | "following"; page?: number; query?: string }) => ({
+    tab: data.tab === "following" ? ("following" as const) : ("followers" as const),
+    page: Math.max(0, Math.floor(data.page ?? 0)),
+    query: (data.query ?? "").trim().slice(0, 60),
+  }))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const PAGE_SIZE = 20;
+
+    const [{ data: followerRows }, { data: followingRows }] = await Promise.all([
+      supabase.from("follows").select("follower_id").eq("following_id", userId),
+      supabase.from("follows").select("following_id").eq("follower_id", userId),
+    ]);
+
+    const followerIds = (followerRows ?? []).map((r) => r.follower_id);
+    const followingIds = (followingRows ?? []).map((r) => r.following_id);
+    const followingSet = new Set(followingIds);
+    const ids = data.tab === "followers" ? followerIds : followingIds;
+
+    const counts = { followers: followerIds.length, following: followingIds.length };
+
+    if (!ids.length) {
+      return { items: [] as Array<ProfileLite & { isFollowing: boolean }>, hasMore: false, page: data.page, counts };
+    }
+
+    let q = supabase
+      .from("public_profiles")
+      .select("user_id, username, display_name, avatar_url, bio")
+      .in("user_id", ids)
+      .order("username", { ascending: true })
+      .range(data.page * PAGE_SIZE, data.page * PAGE_SIZE + PAGE_SIZE);
+
+    if (data.query) {
+      const like = `%${data.query.replace(/[%_,]/g, "")}%`;
+      q = q.or(`username.ilike.${like},display_name.ilike.${like}`);
+    }
+
+    const { data: rows, error } = await q;
+    if (error) throw new Error("Couldn't load this list right now.");
+
+    const all = ((rows ?? []) as Array<Partial<ProfileLite>>).map((p) => ({
+      user_id: p.user_id ?? "",
+      username: p.username ?? "reader",
+      display_name: p.display_name ?? null,
+      avatar_url: p.avatar_url ?? null,
+      bio: p.bio ?? null,
+      isFollowing: followingSet.has(p.user_id ?? ""),
+    }));
+
+    const hasMore = all.length > PAGE_SIZE;
+    return { items: all.slice(0, PAGE_SIZE), hasMore, page: data.page, counts };
+  });
+
+
 
 export const getMyReviews = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

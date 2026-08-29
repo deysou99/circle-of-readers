@@ -13,7 +13,7 @@ export function ProfileStatsTab() {
   const fetchInsights = useServerFn(getReadingInsights);
   const [year, setYear] = useState<number | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["reading-insights", year],
     queryFn: () => fetchInsights({ data: { year } }),
   });
@@ -30,7 +30,24 @@ export function ProfileStatsTab() {
         ))}
       </div>
 
-      {isLoading && <p className="py-6 text-center text-sm text-muted-foreground">Crunching your reading data…</p>}
+      {isLoading && (
+        <div className="grid grid-cols-2 gap-3" aria-busy="true">
+          {Array.from({ length: 6 }).map((_, n) => (
+            <div key={n} className="h-24 animate-pulse rounded-2xl border border-border bg-parchment" />
+          ))}
+        </div>
+      )}
+
+      {isError && !isLoading && (
+        <div className="rounded-2xl border border-border bg-parchment p-6 text-center">
+          <p className="text-sm text-ink">We couldn't load your reading insights.</p>
+          <button onClick={() => void refetch()} className="mt-3 rounded-full bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground">Retry</button>
+        </div>
+      )}
+
+      {!isLoading && !isError && !i && (
+        <p className="py-10 text-center text-sm text-muted-foreground">No reading data yet for this period. Start a book to see your insights.</p>
+      )}
 
       {i && (
         <>
