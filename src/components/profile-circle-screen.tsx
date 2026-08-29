@@ -421,43 +421,60 @@ export function ProfileCircleScreen({
           </p>
         )}
 
-        {list.map((p) => (
-          <div
-            key={p.user_id}
-            ref={p.user_id === firstMatchId ? firstMatchRef : undefined}
-            className="flex items-center gap-3 rounded-2xl border border-border bg-parchment p-3"
-          >
-            <Link to="/readers/$id" params={{ id: p.user_id }} className="flex min-w-0 flex-1 items-center gap-3">
-              <Avatar className="h-11 w-11">
-                <AvatarImage src={p.avatar_url ?? undefined} />
-                <AvatarFallback>{(p.display_name ?? p.username).slice(0, 2)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-ink">
-                  <Highlight text={p.display_name ?? p.username} query={debounced} />
-                  {p.isMutual && (
-                    <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                      Mutual
-                    </span>
-                  )}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  @<Highlight text={p.username} query={debounced} />
-                </p>
-              </div>
-            </Link>
-            <Button
-              size="sm"
-              variant={p.isFollowing ? "outline" : "default"}
-              onClick={() => followMutation.mutate(p.user_id)}
-              className="h-8 shrink-0 rounded-full text-xs"
-            >
-              {p.isFollowing ? "Following" : "Follow"}
-            </Button>
+        {list.length > 0 && (
+          <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+            {virtualItems.map((row) => {
+              const p = list[row.index];
+              if (!p) return null;
+              return (
+                <div
+                  key={row.key}
+                  data-index={row.index}
+                  ref={virtualizer.measureElement}
+                  className="absolute left-0 top-0 w-full pb-3"
+                  style={{ transform: `translateY(${row.start}px)` }}
+                >
+                  <div
+                    className={`flex items-center gap-3 rounded-2xl border bg-parchment p-3 ${
+                      p.user_id === firstMatchId && debounced ? "border-primary" : "border-border"
+                    }`}
+                  >
+                    <Link to="/readers/$id" params={{ id: p.user_id }} className="flex min-w-0 flex-1 items-center gap-3">
+                      <Avatar className="h-11 w-11">
+                        <AvatarImage src={p.avatar_url ?? undefined} />
+                        <AvatarFallback>{(p.display_name ?? p.username).slice(0, 2)}</AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-ink">
+                          <Highlight text={p.display_name ?? p.username} query={debounced} />
+                          {p.isMutual && (
+                            <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                              Mutual
+                            </span>
+                          )}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          @<Highlight text={p.username} query={debounced} />
+                        </p>
+                      </div>
+                    </Link>
+                    <Button
+                      size="sm"
+                      variant={p.isFollowing ? "outline" : "default"}
+                      onClick={() => followMutation.mutate(p.user_id)}
+                      className="h-8 shrink-0 rounded-full text-xs"
+                    >
+                      {p.isFollowing ? "Following" : "Follow"}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
+        )}
 
         <div ref={sentinelRef} />
+
         {isFetchingNextPage && (
           <p className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
             <Loader2 size={14} className="animate-spin" /> Loading more…
