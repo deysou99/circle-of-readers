@@ -106,9 +106,12 @@ export const sendPhoneOtp = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
 
+    const { logOtpEvent } = await import("@/lib/otp-telemetry.server");
+
     if (isSmsConfigured()) {
       const sent = await sendSms(phone, `${code} is your Circle verification code. It expires in 10 minutes.`);
       if (sent.ok) {
+        await logOtpEvent({ userId, eventType: "sent", phone, deliveryMode: "sms" });
         return {
           phone,
           deliveryMode: "sms" as const,
@@ -120,6 +123,14 @@ export const sendPhoneOtp = createServerFn({ method: "POST" })
       // Provider failed: fall back to showing the code in-app. The stored code,
       // its expiry, the resend cooldown and attempt limit all stay unchanged.
       console.error(`[otp] SMS delivery failed, falling back to in-app code: ${sent.error ?? "unknown"}`);
+      await logOtpEvent({
+        userId,
+        eventType: "sms_failed",
+        phone,
+        deliveryMode: "sms",
+        error: sent.error ?? "unknown",
+      });
+      await logOtpEvent({ userId, eventType: "fallback_in_app", phone, deliveryMode: "in_app" });
       return {
         phone,
         deliveryMode: "in_app" as const,
@@ -132,6 +143,7 @@ export const sendPhoneOtp = createServerFn({ method: "POST" })
     }
 
     // No SMS provider is linked yet, so surface the code in-app.
+    await logOtpEvent({ userId, eventType: "sent", phone, deliveryMode: "in_app" });
     return {
       phone,
       deliveryMode: "in_app" as const,
@@ -141,6 +153,7 @@ export const sendPhoneOtp = createServerFn({ method: "POST" })
       attemptsLeft: MAX_ATTEMPTS,
     };
   });
+
 
 /** Verifies the OTP and marks the profile phone as verified. */
 export const verifyPhoneOtp = createServerFn({ method: "POST" })
@@ -165,7 +178,15 @@ export const verifyPhoneOtp = createServerFn({ method: "POST" })
     if (new Date(row.expires_at).getTime() < Date.now()) {
       throw new Error("That code has expired — tap “Send a new code”.");
     }
+    const { logOtpEvent } = await import("@/lib/otp-telemetry.server");
     if (row.attempts >= MAX_ATTEMPTS) {
+      await logOtpEvent({
+        userId,
+        eventType: "verify_blocked",
+        phone: row.phone,
+        attempts: row.attempts,
+        error: "attempt limit reached",
+      });
       throw new Error("Too many attempts — tap “Send a new code” to start over.");
     }
 
@@ -174,6 +195,13 @@ export const verifyPhoneOtp = createServerFn({ method: "POST" })
       const attempts = row.attempts + 1;
       await supabaseAdmin.from("phone_verifications").update({ attempts }).eq("id", row.id);
       const left = MAX_ATTEMPTS - attempts;
+      await logOtpEvent({
+        userId,
+        eventType: "verify_failed",
+        phone: row.phone,
+        attempts,
+        error: "code mismatch",
+      });
       throw new Error(
         left > 0
           ? `That code doesn't match. ${left} ${left === 1 ? "attempt" : "attempts"} left before you'll need a new code.`
@@ -197,8 +225,16 @@ export const verifyPhoneOtp = createServerFn({ method: "POST" })
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
 
+    await logOtpEvent({
+      userId,
+      eventType: "verified",
+      phone: row.phone,
+      attempts: row.attempts,
+    });
+
     return { ok: true, phone: row.phone };
   });
+
 
 /**
  * Changes the stored phone number, clears verification and immediately opens a
@@ -229,6 +265,11 @@ export const changePhoneNumber = createServerFn({ method: "POST" })
       .update({ consumed_at: new Date().toISOString() })
       .eq("user_id", userId)
       .is("consumed_at", null);
+
+    const { logOtpEvent } = await import("@/lib/otp-telemetry.server");
+    await logOtpEvent({ userId, eventType: "phone_changed", phone, deliveryMode: null });
+
+
 
     return { ok: true, phone };
   });
