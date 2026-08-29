@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Copy, Loader2, RefreshCw, Search, Share2, X } from "lucide-react";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { getCirclePage, type CircleFilter, type CircleSort } from "@/lib/profile-tabs.functions";
 import { toggleFollow } from "@/lib/circle.functions";
+import { getSharePreview, logShareEvent, type ShareEventType } from "@/lib/share.functions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -75,6 +76,9 @@ export function ProfileCircleScreen({
 } = {}) {
   const fetchPage = useServerFn(getCirclePage);
   const follow = useServerFn(toggleFollow);
+  const fetchSharePreview = useServerFn(getSharePreview);
+  const trackShare = useServerFn(logShareEvent);
+  const router = useRouter();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [tab, setTab] = useState<CircleTab>(initialTab ?? "followers");
