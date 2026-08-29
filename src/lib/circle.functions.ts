@@ -165,11 +165,6 @@ export const getFeed = createServerFn({ method: "GET" })
     ]);
 
     const authorMap = new Map((authors ?? []).map((a) => [a.user_id, a]));
-    const followsYouSet = new Set((followsBack ?? []).map((f) => f.follower_id));
-    const activePeopleSet = new Set((activePeople ?? []).map((p) => p.user_id));
-    const activeClubSet = new Set((activeClubs ?? []).map((p) => p.club_id).filter((c): c is string => Boolean(c)));
-    const boostedPeopleSet = new Set(boostPeople.map((p) => p.user_id));
-    const boostedClubSet = new Set(boostClubs.map((c) => c.id));
     const likedIds = new Set((likes ?? []).map((l) => l.post_id));
 
     return list.map((p) => ({
