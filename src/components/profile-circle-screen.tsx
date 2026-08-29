@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Copy, Loader2, RefreshCw, Search, Share2, X } from "lucide-react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -88,7 +88,6 @@ export function ProfileCircleScreen({
   const pullStart = useRef<number | null>(null);
   const scrollRef = useRef<HTMLElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const firstMatchRef = useRef<HTMLDivElement | null>(null);
   const scrollOffset = useRef(0);
   const restored = useRef(false);
   const lastAutoScrolled = useRef("");
