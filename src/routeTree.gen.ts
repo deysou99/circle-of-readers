@@ -33,6 +33,7 @@ import { Route as AuthenticatedJournalSlugRouteImport } from './routes/_authenti
 import { Route as AuthenticatedMessagesIdRouteImport } from './routes/_authenticated.messages.$id'
 import { Route as AuthenticatedPostsIdRouteImport } from './routes/_authenticated.posts.$id'
 import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated.profile.index'
+import { Route as AuthenticatedProfileNotificationsRouteImport } from './routes/_authenticated.profile.notifications'
 import { Route as AuthenticatedProfileOnboardingAnalyticsRouteImport } from './routes/_authenticated.profile.onboarding-analytics'
 import { Route as AuthenticatedProfileOnboardingProgressRouteImport } from './routes/_authenticated.profile.onboarding-progress'
 import { Route as AuthenticatedProfileReaderAnswersRouteImport } from './routes/_authenticated.profile.reader-answers'
@@ -162,6 +163,12 @@ const AuthenticatedProfileIndexRoute =
     path: '/profile/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProfileNotificationsRoute =
+  AuthenticatedProfileNotificationsRouteImport.update({
+    id: '/profile/notifications',
+    path: '/profile/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProfileOnboardingAnalyticsRoute =
   AuthenticatedProfileOnboardingAnalyticsRouteImport.update({
     id: '/profile/onboarding-analytics',
@@ -221,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/journal/$slug': typeof AuthenticatedJournalSlugRoute
   '/messages/$id': typeof AuthenticatedMessagesIdRoute
   '/posts/$id': typeof AuthenticatedPostsIdRoute
+  '/profile/notifications': typeof AuthenticatedProfileNotificationsRoute
   '/profile/onboarding-analytics': typeof AuthenticatedProfileOnboardingAnalyticsRoute
   '/profile/onboarding-progress': typeof AuthenticatedProfileOnboardingProgressRoute
   '/profile/reader-answers': typeof AuthenticatedProfileReaderAnswersRoute
@@ -251,6 +259,7 @@ export interface FileRoutesByTo {
   '/journal/$slug': typeof AuthenticatedJournalSlugRoute
   '/messages/$id': typeof AuthenticatedMessagesIdRoute
   '/posts/$id': typeof AuthenticatedPostsIdRoute
+  '/profile/notifications': typeof AuthenticatedProfileNotificationsRoute
   '/profile/onboarding-analytics': typeof AuthenticatedProfileOnboardingAnalyticsRoute
   '/profile/onboarding-progress': typeof AuthenticatedProfileOnboardingProgressRoute
   '/profile/reader-answers': typeof AuthenticatedProfileReaderAnswersRoute
@@ -284,6 +293,7 @@ export interface FileRoutesById {
   '/_authenticated/journal/$slug': typeof AuthenticatedJournalSlugRoute
   '/_authenticated/messages/$id': typeof AuthenticatedMessagesIdRoute
   '/_authenticated/posts/$id': typeof AuthenticatedPostsIdRoute
+  '/_authenticated/profile/notifications': typeof AuthenticatedProfileNotificationsRoute
   '/_authenticated/profile/onboarding-analytics': typeof AuthenticatedProfileOnboardingAnalyticsRoute
   '/_authenticated/profile/onboarding-progress': typeof AuthenticatedProfileOnboardingProgressRoute
   '/_authenticated/profile/reader-answers': typeof AuthenticatedProfileReaderAnswersRoute
@@ -317,6 +327,7 @@ export interface FileRouteTypes {
     | '/journal/$slug'
     | '/messages/$id'
     | '/posts/$id'
+    | '/profile/notifications'
     | '/profile/onboarding-analytics'
     | '/profile/onboarding-progress'
     | '/profile/reader-answers'
@@ -347,6 +358,7 @@ export interface FileRouteTypes {
     | '/journal/$slug'
     | '/messages/$id'
     | '/posts/$id'
+    | '/profile/notifications'
     | '/profile/onboarding-analytics'
     | '/profile/onboarding-progress'
     | '/profile/reader-answers'
@@ -379,6 +391,7 @@ export interface FileRouteTypes {
     | '/_authenticated/journal/$slug'
     | '/_authenticated/messages/$id'
     | '/_authenticated/posts/$id'
+    | '/_authenticated/profile/notifications'
     | '/_authenticated/profile/onboarding-analytics'
     | '/_authenticated/profile/onboarding-progress'
     | '/_authenticated/profile/reader-answers'
@@ -567,6 +580,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile/notifications': {
+      id: '/_authenticated/profile/notifications'
+      path: '/profile/notifications'
+      fullPath: '/profile/notifications'
+      preLoaderRoute: typeof AuthenticatedProfileNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile/onboarding-analytics': {
       id: '/_authenticated/profile/onboarding-analytics'
       path: '/profile/onboarding-analytics'
@@ -671,6 +691,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminOtpRoute: typeof AuthenticatedAdminOtpRoute
   AuthenticatedJournalSlugRoute: typeof AuthenticatedJournalSlugRoute
   AuthenticatedPostsIdRoute: typeof AuthenticatedPostsIdRoute
+  AuthenticatedProfileNotificationsRoute: typeof AuthenticatedProfileNotificationsRoute
   AuthenticatedProfileOnboardingAnalyticsRoute: typeof AuthenticatedProfileOnboardingAnalyticsRoute
   AuthenticatedProfileOnboardingProgressRoute: typeof AuthenticatedProfileOnboardingProgressRoute
   AuthenticatedProfileReaderAnswersRoute: typeof AuthenticatedProfileReaderAnswersRoute
@@ -692,6 +713,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminOtpRoute: AuthenticatedAdminOtpRoute,
   AuthenticatedJournalSlugRoute: AuthenticatedJournalSlugRoute,
   AuthenticatedPostsIdRoute: AuthenticatedPostsIdRoute,
+  AuthenticatedProfileNotificationsRoute:
+    AuthenticatedProfileNotificationsRoute,
   AuthenticatedProfileOnboardingAnalyticsRoute:
     AuthenticatedProfileOnboardingAnalyticsRoute,
   AuthenticatedProfileOnboardingProgressRoute:

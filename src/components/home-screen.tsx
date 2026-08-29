@@ -5,7 +5,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getFeed, toggleLike } from "@/lib/circle.functions";
+import { toggleLike } from "@/lib/circle.functions";
+import { getTimeline } from "@/lib/social.functions";
+import { TimelineFilters, type TimelineType, type TimelineRange } from "@/components/timeline-filters";
+import { RecommendationsRail } from "@/components/recommendations-rail";
 import { ResumeOnboardingBanner } from "@/components/resume-onboarding-banner";
 import { CreatePostSheet } from "@/components/create-post-sheet";
 import { PostImage } from "@/components/post-image";
@@ -22,14 +25,17 @@ function timeAgo(iso: string) {
 }
 
 export function HomeScreen() {
-  const fetchFeed = useServerFn(getFeed);
+  const fetchFeed = useServerFn(getTimeline);
   const like = useServerFn(toggleLike);
   const queryClient = useQueryClient();
   const [composerOpen, setComposerOpen] = useState(false);
+  const [type, setType] = useState<TimelineType>("all");
+  const [range, setRange] = useState<TimelineRange>("all");
+  const [clubId, setClubId] = useState<string | null>(null);
 
   const { data: posts, isLoading } = useQuery({
-    queryKey: ["feed"],
-    queryFn: () => fetchFeed(),
+    queryKey: ["feed", type, range, clubId],
+    queryFn: () => fetchFeed({ data: { type, range, clubId } }),
   });
 
   const likeMutation = useMutation({
@@ -68,6 +74,19 @@ export function HomeScreen() {
 
       <ResumeOnboardingBanner />
 
+      <TimelineFilters
+        type={type}
+        range={range}
+        clubId={clubId}
+        onChange={(next) => {
+          if (next.type !== undefined) setType(next.type);
+          if (next.range !== undefined) setRange(next.range);
+          if (next.clubId !== undefined) setClubId(next.clubId);
+        }}
+      />
+
+      <RecommendationsRail />
+
       {readers.length > 0 && (
         <section className="flex gap-4 overflow-x-auto border-b border-border px-4 py-4">
           {readers.map((r) => (
@@ -86,7 +105,7 @@ export function HomeScreen() {
         {isLoading && <p className="pt-8 text-center text-sm text-muted-foreground">Loading your feed…</p>}
         {!isLoading && (posts ?? []).length === 0 && (
           <div className="rounded-2xl border border-dashed border-border bg-parchment p-8 text-center">
-            <p className="text-sm font-medium text-ink">Your feed is quiet</p>
+            <p className="text-sm font-medium text-ink">Nothing here yet</p>
             <p className="mt-1 text-xs text-muted-foreground">Share your first reading update to get the conversation going.</p>
             <Button onClick={() => setComposerOpen(true)} className="mt-4 h-10 rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90">Write a post</Button>
           </div>
