@@ -553,21 +553,48 @@ export function ProfileCircleScreen({
             <DialogTitle className="text-base">Share this view</DialogTitle>
           </DialogHeader>
           <p className="text-xs text-muted-foreground">This is how the link will look before anyone opens it.</p>
-          <div className="rounded-xl border border-border bg-parchment p-3">
+          <button
+            type="button"
+            onClick={() => void prefetchSharedView()}
+            onMouseEnter={() => void prefetchSharedView()}
+            className="w-full rounded-xl border border-border bg-parchment p-3 text-left transition-colors hover:border-primary/40"
+            aria-label="Preview the shared view"
+          >
             <p className="text-[10px] uppercase tracking-wide text-muted-foreground">circle.myflip</p>
-            <p className="mt-1 text-sm font-semibold text-ink">{previewTitle}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{previewDescription}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] capitalize text-muted-foreground">{tab}</span>
-              {debounced && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">“{debounced}”</span>
-              )}
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                {matchCount} {matchCount === 1 ? "match" : "matches"}
-              </span>
-            </div>
+            {previewLoading ? (
+              <div className="mt-1 space-y-2" aria-busy="true">
+                <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-full animate-pulse rounded bg-muted" />
+                <div className="flex gap-1.5">
+                  <div className="h-4 w-16 animate-pulse rounded-full bg-muted" />
+                  <div className="h-4 w-20 animate-pulse rounded-full bg-muted" />
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="mt-1 text-sm font-semibold text-ink">{previewTitle}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{previewDescription}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] capitalize text-muted-foreground">{tab}</span>
+                  {debounced && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">“{debounced}”</span>
+                  )}
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                    {typeof previewMatches === "number"
+                      ? `${previewMatches} ${previewMatches === 1 ? "match" : "matches"}`
+                      : "Match count unavailable"}
+                  </span>
+                </div>
+                {previewDegraded && (
+                  <p className="mt-2 text-[10px] text-muted-foreground">
+                    We couldn’t count matches just now — the link still opens the right view.
+                  </p>
+                )}
+              </>
+            )}
             <p className="mt-2 truncate text-[10px] text-muted-foreground">{shareUrl}</p>
-          </div>
+          </button>
+
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1 rounded-full" onClick={() => void copyShareLink()}>
               <Copy size={16} className="mr-1.5" /> Copy link
