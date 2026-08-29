@@ -55,10 +55,12 @@ export function ConversationView({
 
   useEffect(() => {
     if (!data) return;
+    // "Hidden" keeps read receipts private: we never publish a read marker.
+    if (seenMode === "hidden") return;
     markRead({ data: { conversationId } })
       .then(() => queryClient.invalidateQueries({ queryKey: ["conversations"] }))
       .catch(() => undefined);
-  }, [data, conversationId, markRead, queryClient]);
+  }, [data, conversationId, markRead, queryClient, seenMode]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
