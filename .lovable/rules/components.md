@@ -2,6 +2,12 @@
 
 Component catalog for **Circle: Your Reading Community**. Import all components from `@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca`.
 
+### ActivityGrid
+
+```ts
+import { ActivityGrid } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
 ### AdminOtpScreen
 
 ```ts
@@ -12,6 +18,12 @@ import { AdminOtpScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a
 
 ```ts
 import { AdminSecurityScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Alert
+
+```ts
+import { Alert } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
 ### AlertDialog
@@ -92,6 +104,12 @@ import { AppErrorBoundary } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a1
 |---|---|---|
 | `children` | any | `—` |
 
+### AreaSpark
+
+```ts
+import { AreaSpark } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
 ### ArticleScreen
 
 ```ts
@@ -128,6 +146,24 @@ import { AvatarFallback } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a
 import { AvatarImage } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
+### Badge
+
+```ts
+import { Badge } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+**Props:**
+
+| Prop | Type | Default |
+|---|---|---|
+| `variant` | neutral · brand · gradient · success · warning · error · info · outline | `neutral` |
+
+### BarChart
+
+```ts
+import { BarChart } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
 ### BasicProfileStep
 
 ```ts
@@ -161,6 +197,12 @@ import { BooksScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f
 import { BottomNav } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
+### Breadcrumbs
+
+```ts
+import { Breadcrumbs } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
 ### Button
 
 ```ts
@@ -171,14 +213,20 @@ import { Button } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70
 
 | Prop | Type | Default |
 |---|---|---|
-| `variant` | default · destructive · outline · secondary · ghost · link | `default` |
-| `size` | default · sm · lg · icon | `default` |
-| `asChild` | boolean | `false` |
+| `variant` | primary · secondary · outline · ghost · destructive · success | `primary` |
+| `size` | sm · md · lg · icon · icon-round | `md` |
+| `block` | true · false | `false` |
 
 ### CardGroup
 
 ```ts
 import { CardGroup } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### CardHeader
+
+```ts
+import { CardHeader } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
 ### ChangeEmailCard
@@ -197,6 +245,12 @@ import { ChangePhoneCard } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12
 
 ```ts
 import { ChatScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Checkbox
+
+```ts
+import { Checkbox } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
 ### ChipGroup
@@ -319,16 +373,40 @@ import { DialogTrigger } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-
 import { DiscoverScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
+### DonutChart
+
+```ts
+import { DonutChart } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
 ### EmailAuthScreen
 
 ```ts
 import { EmailAuthScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
+### EmptyState
+
+```ts
+import { EmptyState } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
 ### FeedSkeleton
 
 ```ts
 import { FeedSkeleton } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Field
+
+```ts
+import { Field } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### FileUpload
+
+```ts
+import { FileUpload } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
 ### GoodreadsPanel
@@ -347,11 +425,31 @@ import { GoodreadsPanel } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a
 | `title` | string | `—` |
 | `subtitle` | string | `—` |
 
+### GradientHighlightCard
+
+```ts
+import { GradientHighlightCard } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
 ### HomeScreen
 
 ```ts
 import { HomeScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
+
+### IconButton
+
+```ts
+import { IconButton } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+**Props:**
+
+| Prop | Type | Default |
+|---|---|---|
+| `label` | string | `—` |
+| `icon` | any | `—` |
+| `shape` | round · square | `round` |
 
 ### Input
 
@@ -395,6 +493,12 @@ import { Label } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c705
 import { MessagesScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
+### MetricCard
+
+```ts
+import { MetricCard } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
 ### NotificationPreferencesScreen
 
 ```ts
@@ -423,6 +527,12 @@ import { OnboardingProgressScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97
 
 ```ts
 import { OnboardingScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Pagination
+
+```ts
+import { Pagination } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
 ### PhoneVerifyStep
@@ -487,6 +597,24 @@ import { ProfileStatsTab } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12
 import { Progress } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
+### ProgressBar
+
+```ts
+import { ProgressBar } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### ProgressRing
+
+```ts
+import { ProgressRing } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Radio
+
+```ts
+import { Radio } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
 ### RailSkeleton
 
 ```ts
@@ -521,6 +649,24 @@ import { SafeAwait } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67
 
 ```ts
 import { SearchScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### SectionHeading
+
+```ts
+import { SectionHeading } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### SegmentedControl
+
+```ts
+import { SegmentedControl } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Select
+
+```ts
+import { Select } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
 ### SelectionHint
@@ -595,6 +741,30 @@ import { SheetTitle } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f6
 import { SheetTrigger } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
+### SideNav
+
+```ts
+import { SideNav } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Skeleton
+
+```ts
+import { Skeleton } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Slider
+
+```ts
+import { Slider } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Spinner
+
+```ts
+import { Spinner } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
 ### SplashScreen
 
 ```ts
@@ -613,11 +783,58 @@ import { StageHeader } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f
 import { StageProgress } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
+### StatusDot
+
+```ts
+import { StatusDot } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Surface
+
+```ts
+import { Surface } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+**Props:**
+
+| Prop | Type | Default |
+|---|---|---|
+| `variant` | standard · elevated · sunken · interactive · highlight · gradient · outline | `standard` |
+| `radius` | s · m · l · xl | `l` |
+| `padding` | none · sm · md · lg | `md` |
+| `as` | div · section · article · li | `—` |
+
 ### Switch
 
 ```ts
 import { Switch } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
+
+### Tabs
+
+```ts
+import { Tabs } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### TextArea
+
+```ts
+import { TextArea } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### TextInput
+
+```ts
+import { TextInput } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+**Props:**
+
+| Prop | Type | Default |
+|---|---|---|
+| `state` | default · error · success | `default` |
+| `leadingIcon` | any | `—` |
+| `trailingSlot` | any | `—` |
 
 ### Textarea
 
@@ -629,6 +846,12 @@ import { Textarea } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c
 
 ```ts
 import { TimelineFilters } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Toggle
+
+```ts
+import { Toggle } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
 ### UserProfileScreen

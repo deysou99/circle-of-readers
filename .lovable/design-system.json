@@ -2,7 +2,7 @@
   "meta": {
     "name": "Circle: Your Reading Community",
     "package": "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "framework": "react",
     "css_framework": "tailwind",
     "starter_template": "custom_design_system_tailwind",
@@ -11,14 +11,16 @@
     ],
     "source_type": "local",
     "source_manifest": {
-      "#enrichment": "a592c6d1ce3c82fd8c9e5f4b717fea49121dc5dee0074ea7f4763b29f6090131",
+      "#enrichment": "79ecf7d34859ea975eeea533ec6884e3b4f91e35de4c3530360fdfcbba54773b",
       ".gitignore": "6d9e901a692b46a83707c245fb03bc91",
+      ".lovable/meta.yaml": "954a981e8847ec1692669dbb04ae9ae9",
       ".lovable/plan/circle-by-myflip-first-build-2026-08-27.md": "8eb2dc097364dbec710298850e41e557",
       ".lovable/project.json": "683a7777285ec09604e1030ddf427ac5",
+      ".lovable/sources.yaml": "ee6247f6fe77fe1387244cd3c757e6a3",
       ".prettierignore": "7279a476f196a2da5f7edd18db568dc6",
       ".prettierrc": "185ef0234746ab738ac1ab6cec5e2bd9",
       "AGENTS.md": "3da3c4cd15b686e79a248c25735d6aaf",
-      "README.md": "15ccc2c959c0bff2136261ce044c418f",
+      "README.md": "bbab2a4099e453c2c31f63a5f6e6750a",
       "bunfig.toml": "89115995d9de72fdfc894e16b1e75297",
       "components.json": "30d3d035361ce807021f5c54620962e9",
       "e2e/auth_onboarding_e2e.py": "edcfc90efb02ee6a4d6b6472cae8fe7c",
@@ -56,6 +58,12 @@
       "src/components/create-post-screen.tsx": "47c9b7cad546a15869a75df3670c0f2d",
       "src/components/create-post-sheet.tsx": "c2f140697752087f9ab0028bd99d9123",
       "src/components/discover-screen.tsx": "5cfc8be068291826b7560a467f536b5d",
+      "src/components/ds/button.tsx": "8315d25c446d8d8b96c9a8c0d2ff8a02",
+      "src/components/ds/charts.tsx": "a7db4fcb4bc1a83e023a95535083e691",
+      "src/components/ds/feedback.tsx": "624dbfd5d506deb4dd361fe5f222fd66",
+      "src/components/ds/field.tsx": "29ee1016574a6f5f038f83dd770002ea",
+      "src/components/ds/navigation.tsx": "8187be03688bb568f9c0a9d7d35c7e71",
+      "src/components/ds/surface.tsx": "4732d4255001d28da6db914414edb548",
       "src/components/email-auth-screen.tsx": "41d70034570649e0cee46c439167940d",
       "src/components/goodreads-panel.tsx": "973636a8d2e8c3fdce8d569e1e26ac4e",
       "src/components/home-screen.tsx": "6048fe86c7d9fcb5b60f73e62e9b814e",
@@ -134,6 +142,7 @@
       "src/components/verify-email-screen.tsx": "9d9d8f4f74880c4e006a39f87c4ef8b2",
       "src/contexts/auth-context.tsx": "acd5081e74932df12fd927e40a70440a",
       "src/hooks/use-mobile.tsx": "c0a0bdd4638c391a1dd06ac82074e60b",
+      "src/index.ts": "fc134373bdc14925dd504171c5fccc32",
       "src/integrations/lovable/index.ts": "c997b4d5cc51f8fe73119e270709d8f1",
       "src/integrations/supabase/auth-attacher.ts": "dad043cda134d909e52de0346c16625e",
       "src/integrations/supabase/auth-middleware.ts": "5d9d831f79177b7c6327cbd794a97367",
@@ -209,7 +218,7 @@
       "src/routes/verify-email.tsx": "69c25df0f05eeed9c0f15049c7c00401",
       "src/server.ts": "c7bbc49bb70e318af618d92775ee0f27",
       "src/start.ts": "d77c1c12904be5077c6955d9b30071af",
-      "src/styles.css": "b6e4bfead8dd396d915a48922e31c6ca",
+      "src/styles.css": "613fbc7a048d5550af8bd0bb3654b050",
       "supabase/config.toml": "968dda6de788069339678d542136e2e5",
       "supabase/migrations/20260827224452_d5843d69-1998-4909-8438-1176db31893d.sql": "4a35bcd8671639667dbe4c7eb3efa9ed",
       "supabase/migrations/20260828082256_25eaf70f-d5ac-47a1-8f11-3a72af5ca4c1.sql": "3b65b9c2dcbe26c15864c14097efc7a1",
@@ -244,82 +253,359 @@
   "tokens": {
     "color": [
       {
-        "name": "--paper",
-        "raw": "oklch(0.98 0 0)",
+        "name": "--red-50",
+        "raw": "#fdeceb",
         "source": "src/styles.css"
       },
       {
-        "name": "--ink",
-        "raw": "oklch(0.2 0.02 264)",
+        "name": "--red-100",
+        "raw": "#fad3d0",
         "source": "src/styles.css"
       },
       {
-        "name": "--primary",
-        "raw": "oklch(0.75 0.18 155)",
+        "name": "--red-200",
+        "raw": "#f4a8a1",
         "source": "src/styles.css"
       },
       {
-        "name": "--primary-foreground",
-        "raw": "oklch(0.2 0.02 264)",
+        "name": "--red-300",
+        "raw": "#ee7c72",
         "source": "src/styles.css"
       },
       {
-        "name": "--secondary",
-        "raw": "oklch(0.64 0.2 25)",
+        "name": "--red-400",
+        "raw": "#eb5548",
         "source": "src/styles.css"
       },
       {
-        "name": "--secondary-foreground",
-        "raw": "oklch(0.98 0 0)",
+        "name": "--red-500",
+        "raw": "#e83227",
         "source": "src/styles.css"
       },
       {
-        "name": "--forest",
-        "raw": "oklch(0.4 0.08 155)",
+        "name": "--red-600",
+        "raw": "#c8261d",
         "source": "src/styles.css"
       },
       {
-        "name": "--parchment",
-        "raw": "oklch(0.96 0.02 90)",
+        "name": "--red-700",
+        "raw": "#9e1c15",
         "source": "src/styles.css"
       },
       {
-        "name": "--muted",
-        "raw": "oklch(0.94 0.01 90)",
+        "name": "--red-800",
+        "raw": "#74140f",
         "source": "src/styles.css"
       },
       {
-        "name": "--muted-foreground",
-        "raw": "oklch(0.55 0.03 264)",
+        "name": "--red-900",
+        "raw": "#4a0c08",
         "source": "src/styles.css"
       },
       {
-        "name": "--border",
-        "raw": "oklch(0.88 0.01 264)",
+        "name": "--blue-50",
+        "raw": "#f2f5fb",
         "source": "src/styles.css"
       },
       {
-        "name": "--input",
-        "raw": "oklch(0.88 0.01 264)",
+        "name": "--blue-100",
+        "raw": "#e3eaf6",
         "source": "src/styles.css"
       },
       {
-        "name": "--ring",
-        "raw": "oklch(0.75 0.18 155)",
+        "name": "--blue-200",
+        "raw": "#cbd8ee",
         "source": "src/styles.css"
       },
       {
-        "name": "--destructive",
-        "raw": "oklch(0.6 0.22 25)",
+        "name": "--blue-300",
+        "raw": "#afc0e6",
         "source": "src/styles.css"
       },
       {
-        "name": "--destructive-foreground",
-        "raw": "oklch(0.98 0 0)",
+        "name": "--blue-400",
+        "raw": "#8ba2d8",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--blue-500",
+        "raw": "#6a83c4",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--blue-600",
+        "raw": "#4f66a5",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--blue-700",
+        "raw": "#3b4d7f",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--blue-800",
+        "raw": "#29365a",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--blue-900",
+        "raw": "#1a2338",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--yellow-50",
+        "raw": "#fdfcea",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--yellow-100",
+        "raw": "#faf8cd",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--yellow-200",
+        "raw": "#f4f0a2",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--yellow-300",
+        "raw": "#eeea7b",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--yellow-400",
+        "raw": "#e9e55c",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--yellow-500",
+        "raw": "#d4cf3a",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--yellow-600",
+        "raw": "#aca727",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--yellow-700",
+        "raw": "#817d1b",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--yellow-800",
+        "raw": "#575412",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--yellow-900",
+        "raw": "#33310a",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--green-50",
+        "raw": "#e6faf3",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--green-100",
+        "raw": "#c2f3e2",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--green-200",
+        "raw": "#86e7c5",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--green-300",
+        "raw": "#47d9a6",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--green-400",
+        "raw": "#00d084",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--green-500",
+        "raw": "#00b271",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--green-600",
+        "raw": "#009159",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--green-700",
+        "raw": "#006e44",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--green-800",
+        "raw": "#004b2e",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--green-900",
+        "raw": "#002d1c",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ink-900",
+        "raw": "#1b1b1b",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ink-800",
+        "raw": "#2a2a2a",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ink-700",
+        "raw": "#3d3d3d",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ink-600",
+        "raw": "#5a5a5a",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ink-500",
+        "raw": "#767676",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ink-400",
+        "raw": "#9a9a9a",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ink-300",
+        "raw": "#c2c2c2",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ink-200",
+        "raw": "#e0e0e0",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ink-100",
+        "raw": "#eeeeee",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ink-50",
+        "raw": "#f4f4f4",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--off-white",
+        "raw": "#f9f9f9",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--white",
+        "raw": "#ffffff",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--border-subtle",
+        "raw": "color-mix(in oklab, var(--ink-900) 8%, transparent)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--border-default",
+        "raw": "color-mix(in oklab, var(--ink-900) 14%, transparent)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--border-strong",
+        "raw": "color-mix(in oklab, var(--ink-900) 26%, transparent)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--border-brand",
+        "raw": "color-mix(in oklab, var(--red-500) 45%, transparent)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--gradient-primary",
+        "raw": "linear-gradient(135deg, #e83227 0%, #f0663a 55%, #e9e55c 100%)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--gradient-background",
+        "raw": "radial-gradient(\n      120% 90% at 0% 0%,\n      color-mix(in oklab, var(--red-500) 12%, transparent) 0%,\n      transparent 60%\n    ),\n    radial-gradient(100% 80% at 100% 0%, color-mix(in oklab, var(--blue-300) 40%, transparent) 0%, transparent 55%),\n    linear-gradient(180deg, var(--off-white) 0%, var(--off-white) 100%)",
+        "source": "src/styles.css"
+      }
+    ],
+    "spacing": [
+      {
+        "name": "--space-1",
+        "raw": "4px",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--space-2",
+        "raw": "8px",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--space-3",
+        "raw": "12px",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--space-4",
+        "raw": "16px",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--space-5",
+        "raw": "20px",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--space-6",
+        "raw": "24px",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--space-8",
+        "raw": "32px",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--space-10",
+        "raw": "40px",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--space-12",
+        "raw": "48px",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--space-16",
+        "raw": "64px",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--space-20",
+        "raw": "80px",
         "source": "src/styles.css"
       }
     ],
     "typography": [
+      {
+        "name": "--gradient-text",
+        "raw": "linear-gradient(100deg, #e83227 0%, #c8261d 45%, #9a5aa8 100%)",
+        "source": "src/styles.css"
+      },
       {
         "name": "--font-heading",
         "raw": "\"Outfit\", sans-serif",
@@ -329,42 +615,216 @@
         "name": "--font-body",
         "raw": "\"Manrope\", sans-serif",
         "source": "src/styles.css"
+      },
+      {
+        "name": "--font-sans",
+        "raw": "\"Manrope\", sans-serif",
+        "source": "src/styles.css"
       }
     ],
     "radius": [
       {
-        "name": "--radius-sm",
-        "raw": "calc(var(--radius) - 4px)",
+        "name": "--radius-xs",
+        "raw": "6px",
         "source": "src/styles.css"
       },
       {
-        "name": "--radius-md",
-        "raw": "calc(var(--radius) - 2px)",
+        "name": "--radius-s",
+        "raw": "10px",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--radius-m",
+        "raw": "14px",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--radius-l",
+        "raw": "20px",
         "source": "src/styles.css"
       },
       {
         "name": "--radius-xl",
-        "raw": "calc(var(--radius) + 4px)",
+        "raw": "28px",
         "source": "src/styles.css"
       },
       {
-        "name": "--radius-2xl",
-        "raw": "calc(var(--radius) + 8px)",
+        "name": "--radius-pill",
+        "raw": "999px",
         "source": "src/styles.css"
       },
       {
         "name": "--radius-3xl",
-        "raw": "calc(var(--radius) + 12px)",
+        "raw": "36px",
         "source": "src/styles.css"
       },
       {
         "name": "--radius-4xl",
-        "raw": "calc(var(--radius) + 16px)",
+        "raw": "44px",
+        "source": "src/styles.css"
+      }
+    ],
+    "shadow": [
+      {
+        "name": "--shadow-xs",
+        "raw": "0 1px 2px rgba(27, 27, 27, 0.05)",
         "source": "src/styles.css"
       },
       {
-        "name": "--radius",
-        "raw": "0.75rem",
+        "name": "--shadow-s",
+        "raw": "0 2px 8px rgba(27, 27, 27, 0.06)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--shadow-m",
+        "raw": "0 8px 24px -8px rgba(27, 27, 27, 0.12)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--shadow-l",
+        "raw": "0 20px 48px -16px rgba(27, 27, 27, 0.16)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--shadow-brand",
+        "raw": "0 12px 30px -10px color-mix(in oklab, var(--red-500) 55%, transparent)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--shadow-focus",
+        "raw": "0 0 0 3px color-mix(in oklab, var(--red-500) 30%, transparent)",
+        "source": "src/styles.css"
+      }
+    ],
+    "other": [
+      {
+        "name": "--surface-highlight",
+        "raw": "color-mix(in oklab, var(--red-500) 8%, var(--white))",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--state-hover",
+        "raw": "color-mix(in oklab, var(--ink-900) 5%, transparent)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--state-active",
+        "raw": "color-mix(in oklab, var(--ink-900) 10%, transparent)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--state-selected",
+        "raw": "color-mix(in oklab, var(--red-500) 10%, transparent)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--data-grid",
+        "raw": "color-mix(in oklab, var(--ink-900) 8%, transparent)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--gradient-warm",
+        "raw": "linear-gradient(135deg, #e83227 0%, #e9e55c 100%)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--gradient-cool",
+        "raw": "linear-gradient(135deg, #afc0e6 0%, #00d084 100%)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--gradient-success",
+        "raw": "linear-gradient(135deg, #00d084 0%, #e9e55c 100%)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--gradient-feature",
+        "raw": "linear-gradient(140deg, #e83227 0%, #9a5aa8 45%, #afc0e6 100%)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--gradient-dusk",
+        "raw": "linear-gradient(135deg, #afc0e6 0%, #e83227 100%)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--gradient-surface-subtle",
+        "raw": "linear-gradient(\n    160deg,\n    color-mix(in oklab, var(--red-500) 5%, var(--white)) 0%,\n    color-mix(in oklab, var(--blue-300) 14%, var(--white)) 100%\n  )",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--gradient-hover",
+        "raw": "linear-gradient(135deg, #c8261d 0%, #e35a2e 55%, #d4cf3a 100%)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--gradient-ink",
+        "raw": "linear-gradient(140deg, #1b1b1b 0%, #3d3d3d 60%, #29365a 100%)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--duration-fast",
+        "raw": "120ms",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--duration-base",
+        "raw": "200ms",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--duration-slow",
+        "raw": "320ms",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ease-standard",
+        "raw": "cubic-bezier(0.2, 0, 0, 1)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ease-emphasis",
+        "raw": "cubic-bezier(0.32, 0.72, 0, 1)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--transition-base",
+        "raw": "all var(--duration-base) var(--ease-standard)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--z-base",
+        "raw": "0",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--z-sticky",
+        "raw": "20",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--z-nav",
+        "raw": "50",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--z-dropdown",
+        "raw": "100",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--z-overlay",
+        "raw": "200",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--z-modal",
+        "raw": "300",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--z-toast",
+        "raw": "400",
         "source": "src/styles.css"
       }
     ]
@@ -460,6 +920,313 @@
     {
       "name": "DiscoverScreen",
       "file": "src/components/discover-screen",
+      "import_path": ""
+    },
+    {
+      "name": "Button",
+      "file": "src/components/ds/button",
+      "import_path": "",
+      "props": [
+        {
+          "name": "variant",
+          "type": "enum",
+          "values": [
+            "primary",
+            "secondary",
+            "outline",
+            "ghost",
+            "destructive",
+            "success"
+          ],
+          "default": "primary"
+        },
+        {
+          "name": "size",
+          "type": "enum",
+          "values": [
+            "sm",
+            "md",
+            "lg",
+            "icon",
+            "icon-round"
+          ],
+          "default": "md"
+        },
+        {
+          "name": "block",
+          "type": "enum",
+          "values": [
+            "true",
+            "false"
+          ],
+          "default": "false"
+        }
+      ]
+    },
+    {
+      "name": "IconButton",
+      "file": "src/components/ds/button",
+      "import_path": "",
+      "props": [
+        {
+          "name": "label",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "icon",
+          "type": "any",
+          "required": true
+        },
+        {
+          "name": "shape",
+          "type": "enum",
+          "values": [
+            "round",
+            "square"
+          ],
+          "default": "round"
+        }
+      ]
+    },
+    {
+      "name": "AreaSpark",
+      "file": "src/components/ds/charts",
+      "import_path": ""
+    },
+    {
+      "name": "BarChart",
+      "file": "src/components/ds/charts",
+      "import_path": ""
+    },
+    {
+      "name": "DonutChart",
+      "file": "src/components/ds/charts",
+      "import_path": ""
+    },
+    {
+      "name": "ActivityGrid",
+      "file": "src/components/ds/charts",
+      "import_path": ""
+    },
+    {
+      "name": "Badge",
+      "file": "src/components/ds/feedback",
+      "import_path": "",
+      "props": [
+        {
+          "name": "variant",
+          "type": "enum",
+          "values": [
+            "neutral",
+            "brand",
+            "gradient",
+            "success",
+            "warning",
+            "error",
+            "info",
+            "outline"
+          ],
+          "default": "neutral"
+        }
+      ]
+    },
+    {
+      "name": "StatusDot",
+      "file": "src/components/ds/feedback",
+      "import_path": ""
+    },
+    {
+      "name": "Alert",
+      "file": "src/components/ds/feedback",
+      "import_path": ""
+    },
+    {
+      "name": "ProgressBar",
+      "file": "src/components/ds/feedback",
+      "import_path": ""
+    },
+    {
+      "name": "ProgressRing",
+      "file": "src/components/ds/feedback",
+      "import_path": ""
+    },
+    {
+      "name": "Skeleton",
+      "file": "src/components/ds/feedback",
+      "import_path": ""
+    },
+    {
+      "name": "Spinner",
+      "file": "src/components/ds/feedback",
+      "import_path": ""
+    },
+    {
+      "name": "Field",
+      "file": "src/components/ds/field",
+      "import_path": ""
+    },
+    {
+      "name": "TextInput",
+      "file": "src/components/ds/field",
+      "import_path": "",
+      "props": [
+        {
+          "name": "state",
+          "type": "enum",
+          "values": [
+            "default",
+            "error",
+            "success"
+          ],
+          "default": "default"
+        },
+        {
+          "name": "leadingIcon",
+          "type": "any"
+        },
+        {
+          "name": "trailingSlot",
+          "type": "any"
+        }
+      ]
+    },
+    {
+      "name": "TextArea",
+      "file": "src/components/ds/field",
+      "import_path": ""
+    },
+    {
+      "name": "Select",
+      "file": "src/components/ds/field",
+      "import_path": ""
+    },
+    {
+      "name": "Checkbox",
+      "file": "src/components/ds/field",
+      "import_path": ""
+    },
+    {
+      "name": "Radio",
+      "file": "src/components/ds/field",
+      "import_path": ""
+    },
+    {
+      "name": "Toggle",
+      "file": "src/components/ds/field",
+      "import_path": ""
+    },
+    {
+      "name": "Slider",
+      "file": "src/components/ds/field",
+      "import_path": ""
+    },
+    {
+      "name": "FileUpload",
+      "file": "src/components/ds/field",
+      "import_path": ""
+    },
+    {
+      "name": "Tabs",
+      "file": "src/components/ds/navigation",
+      "import_path": ""
+    },
+    {
+      "name": "SegmentedControl",
+      "file": "src/components/ds/navigation",
+      "import_path": ""
+    },
+    {
+      "name": "Breadcrumbs",
+      "file": "src/components/ds/navigation",
+      "import_path": ""
+    },
+    {
+      "name": "SideNav",
+      "file": "src/components/ds/navigation",
+      "import_path": ""
+    },
+    {
+      "name": "Pagination",
+      "file": "src/components/ds/navigation",
+      "import_path": ""
+    },
+    {
+      "name": "Surface",
+      "file": "src/components/ds/surface",
+      "import_path": "",
+      "props": [
+        {
+          "name": "variant",
+          "type": "enum",
+          "values": [
+            "standard",
+            "elevated",
+            "sunken",
+            "interactive",
+            "highlight",
+            "gradient",
+            "outline"
+          ],
+          "default": "standard"
+        },
+        {
+          "name": "radius",
+          "type": "enum",
+          "values": [
+            "s",
+            "m",
+            "l",
+            "xl"
+          ],
+          "default": "l"
+        },
+        {
+          "name": "padding",
+          "type": "enum",
+          "values": [
+            "none",
+            "sm",
+            "md",
+            "lg"
+          ],
+          "default": "md"
+        },
+        {
+          "name": "as",
+          "type": "enum",
+          "values": [
+            "div",
+            "section",
+            "article",
+            "li"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CardHeader",
+      "file": "src/components/ds/surface",
+      "import_path": ""
+    },
+    {
+      "name": "SectionHeading",
+      "file": "src/components/ds/surface",
+      "import_path": ""
+    },
+    {
+      "name": "MetricCard",
+      "file": "src/components/ds/surface",
+      "import_path": ""
+    },
+    {
+      "name": "GradientHighlightCard",
+      "file": "src/components/ds/surface",
+      "import_path": ""
+    },
+    {
+      "name": "EmptyState",
+      "file": "src/components/ds/surface",
       "import_path": ""
     },
     {
@@ -763,42 +1530,6 @@
       "name": "AvatarFallback",
       "file": "src/components/ui/avatar",
       "import_path": ""
-    },
-    {
-      "name": "Button",
-      "file": "src/components/ui/button",
-      "import_path": "",
-      "props": [
-        {
-          "name": "variant",
-          "type": "enum",
-          "values": [
-            "default",
-            "destructive",
-            "outline",
-            "secondary",
-            "ghost",
-            "link"
-          ],
-          "default": "default"
-        },
-        {
-          "name": "size",
-          "type": "enum",
-          "values": [
-            "default",
-            "sm",
-            "lg",
-            "icon"
-          ],
-          "default": "default"
-        },
-        {
-          "name": "asChild",
-          "type": "boolean",
-          "default": "false"
-        }
-      ]
     },
     {
       "name": "Dialog",
