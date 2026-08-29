@@ -165,21 +165,31 @@ export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId | unde
           </div>
         </div>
 
-        <div className="px-4 pt-4">
+        <div
+          key={tab}
+          className="max-h-[calc(100dvh-14rem)] overflow-y-auto overscroll-contain px-4 pb-8 pt-4"
+        >
           {tab === "stats" && <ProfileStatsTab />}
           {tab === "reviews" && <ReviewsTab />}
-          {tab === "clubs" && <ClubsTab clubs={myClubs} />}
+          {tab === "clubs" && (
+            <ClubsTab clubs={myClubs} isLoading={clubsLoading} isError={clubsError} onRetry={() => void refetchClubs()} />
+          )}
           {tab === "posts" && <PostsTab />}
           {tab === "likes" && <LikesTab />}
           {tab === "goodreads" && (
-            <GoodreadsPanel
-              value={goodreadsState}
-              invalidateKeys={[["my-profile"]]}
-              title="Goodreads connection"
-              subtitle="Keep your Circle reader profile in step with your Goodreads shelves."
-            />
+            profileError ? (
+              <ErrorState message="We couldn't load your Goodreads connection." onRetry={() => void refetchProfile()} />
+            ) : (
+              <GoodreadsPanel
+                value={goodreadsState}
+                invalidateKeys={[["my-profile"]]}
+                title="Goodreads connection"
+                subtitle="Keep your Circle reader profile in step with your Goodreads shelves."
+              />
+            )
           )}
         </div>
+
       </section>
 
     </div>
