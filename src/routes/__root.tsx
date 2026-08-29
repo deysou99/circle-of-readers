@@ -12,6 +12,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { installCrashReporting, recordCrash } from "../lib/crash-reporting";
 import { AuthProvider } from "@/contexts/auth-context";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { isReactInstanceError } from "@/lib/react-integrity";
@@ -45,6 +46,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const frameworkCrash = isReactInstanceError(error);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    recordCrash(error, "boundary");
   }, [error]);
 
   return (
@@ -129,6 +131,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    installCrashReporting();
+  }, []);
 
   return (
     <AppErrorBoundary>

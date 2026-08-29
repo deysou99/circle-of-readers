@@ -4,6 +4,7 @@ import { version as reactVersion } from "react";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { detectDuplicateReact } from "@/lib/react-integrity";
+import { clearCrashes, readCrashes, type CrashRecord } from "@/lib/crash-reporting";
 import routerPkg from "@tanstack/react-router/package.json" with { type: "json" };
 import queryPkg from "@tanstack/react-query/package.json" with { type: "json" };
 
@@ -40,7 +41,10 @@ function DiagnosticsRoute() {
     detail: "checking…",
   });
 
+  const [crashes, setCrashes] = useState<CrashRecord[]>([]);
+
   useEffect(() => {
+    setCrashes(readCrashes());
     const check = detectDuplicateReact();
     setEnv({
       ua: navigator.userAgent,
@@ -71,6 +75,44 @@ function DiagnosticsRoute() {
         <Row label="TanStack Query" value={queryPkg.version} />
         <Row label="React instances" value={env.detail} warn={env.duplicate} />
         <Row label="Hydrated" value={env.hydrated ? "Yes" : "No"} warn={!env.hydrated} />
+      </section>
+
+      <section className="mx-4 mt-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recent crashes</p>
+          {crashes.length > 0 && (
+            <button
+              onClick={() => {
+                clearCrashes();
+                setCrashes([]);
+              }}
+              className="text-xs text-secondary"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        {crashes.length === 0 ? (
+          <p className="mt-2 rounded-2xl border border-border bg-parchment p-4 text-sm text-muted-foreground">
+            No crashes recorded on this device.
+          </p>
+        ) : (
+          <ul className="mt-2 space-y-2">
+            {crashes.map((c, i) => (
+              <li key={`${c.at}-${i}`} className="rounded-2xl border border-border bg-parchment p-3">
+                <p className="text-sm font-medium text-ink">{c.message}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {new Date(c.at).toLocaleString()} · {c.kind} · {c.route}
+                </p>
+                {c.stack && (
+                  <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap rounded-lg bg-paper p-2 text-[10px] leading-snug text-muted-foreground">
+                    {c.stack}
+                  </pre>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="mx-4 mt-4 rounded-2xl border border-border bg-parchment">
