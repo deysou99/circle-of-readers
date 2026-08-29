@@ -1,0 +1,982 @@
+{
+  "meta": {
+    "name": "Circle: Your Reading Community",
+    "package": "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca",
+    "version": "1.0.0",
+    "framework": "react",
+    "css_framework": "tailwind",
+    "starter_template": "custom_design_system_tailwind",
+    "theme_files": [
+      "src/styles.css"
+    ],
+    "source_type": "local",
+    "source_manifest": {
+      "#enrichment": "a592c6d1ce3c82fd8c9e5f4b717fea49121dc5dee0074ea7f4763b29f6090131",
+      ".gitignore": "6d9e901a692b46a83707c245fb03bc91",
+      ".lovable/plan/circle-by-myflip-first-build-2026-08-27.md": "8eb2dc097364dbec710298850e41e557",
+      ".lovable/project.json": "683a7777285ec09604e1030ddf427ac5",
+      ".prettierignore": "7279a476f196a2da5f7edd18db568dc6",
+      ".prettierrc": "185ef0234746ab738ac1ab6cec5e2bd9",
+      "AGENTS.md": "3da3c4cd15b686e79a248c25735d6aaf",
+      "README.md": "15ccc2c959c0bff2136261ce044c418f",
+      "bunfig.toml": "89115995d9de72fdfc894e16b1e75297",
+      "components.json": "30d3d035361ce807021f5c54620962e9",
+      "e2e/auth_onboarding_e2e.py": "edcfc90efb02ee6a4d6b6472cae8fe7c",
+      "e2e/otp_flow_e2e.py": "47731fcd9fe221f91a595d8bbed22a37",
+      "e2e/route_reload_e2e.py": "410d3c2ae7a549f4826ab6029c4b6a03",
+      "e2e/screenshots/reload_.png": "49397ec64c7bc737094777b9f16c2907",
+      "e2e/screenshots/reload_admin_otp.png": "d01b8ee8520ad4bd6e3aad49724ef982",
+      "e2e/screenshots/reload_auth.png": "d01b8ee8520ad4bd6e3aad49724ef982",
+      "e2e/screenshots/reload_auth_email.png": "a12bc5b1197d739c1d765a823c84add4",
+      "e2e/screenshots/reload_home.png": "d01b8ee8520ad4bd6e3aad49724ef982",
+      "e2e/screenshots/reload_onboarding.png": "d01b8ee8520ad4bd6e3aad49724ef982",
+      "e2e/screenshots/reload_profile.png": "d01b8ee8520ad4bd6e3aad49724ef982",
+      "e2e/screenshots/reload_profile_onboarding-analytics.png": "d01b8ee8520ad4bd6e3aad49724ef982",
+      "e2e/screenshots/reload_profile_onboarding-progress.png": "d01b8ee8520ad4bd6e3aad49724ef982",
+      "e2e/screenshots/reload_reset-password.png": "ad9d4df4e2cd83fdefa45816b07434f2",
+      "e2e/screenshots/reload_verify-email.png": "d01b8ee8520ad4bd6e3aad49724ef982",
+      "eslint.config.js": "345bdd57e188e0e4525edcd00e5003f5",
+      "package.json": "3ec609e6142535309a33894e0e54a8e3",
+      "public/favicon.ico": "9f504444f85a5af2eef9264b02ae40be",
+      "public/robots.txt": "f9dff89adf98833e676de2205921996a",
+      "src/components/admin-otp-screen.tsx": "15891a761bd984a5e9b99987da681b55",
+      "src/components/admin-security-screen.tsx": "b7a280ea5f4a241f0a65e4ba4deea12d",
+      "src/components/app-error-boundary.tsx": "30b45c259ae81bd87805a1d9fc4c817f",
+      "src/components/article-screen.tsx": "d1453ee38b04d95c9b9573d8c145f159",
+      "src/components/auth-screen.tsx": "636724911783e7d391f571db1ed7ceba",
+      "src/components/book-detail-screen.tsx": "8169d2b8f3f0146567f5838706ea8dd3",
+      "src/components/books-screen.tsx": "1ff900f7dee9aa1f9a16a2e1d5753ee9",
+      "src/components/bottom-nav.tsx": "709aab5ff2a04971bc9030a6769068a4",
+      "src/components/chat-screen.tsx": "822eae76fef18901375623ca8cbffd4d",
+      "src/components/club-chat-screen.tsx": "1bbc50c1590d0ee38d770e1ea9058772",
+      "src/components/club-detail-screen.tsx": "08406c873f07c5fa4f1355fc8348fe78",
+      "src/components/club-events.tsx": "d395de3bc49f606e3a15f690f5482ba5",
+      "src/components/clubs-screen.tsx": "1a2dca42ef03686e576cfae510a8cd1d",
+      "src/components/conversation-view.tsx": "2e3b3bcc97c63900ac10fbe59f3f7ac5",
+      "src/components/create-post-screen.tsx": "47c9b7cad546a15869a75df3670c0f2d",
+      "src/components/create-post-sheet.tsx": "c2f140697752087f9ab0028bd99d9123",
+      "src/components/discover-screen.tsx": "5cfc8be068291826b7560a467f536b5d",
+      "src/components/email-auth-screen.tsx": "41d70034570649e0cee46c439167940d",
+      "src/components/goodreads-panel.tsx": "973636a8d2e8c3fdce8d569e1e26ac4e",
+      "src/components/home-screen.tsx": "6048fe86c7d9fcb5b60f73e62e9b814e",
+      "src/components/home-skeleton.tsx": "9523e90da408c412d98c806dd5e34912",
+      "src/components/messages-screen.tsx": "5e5770a95dc522f92cd8e7927f3ad3f9",
+      "src/components/notification-preferences-screen.tsx": "0862da420ce76933d2abec63d2dde8da",
+      "src/components/notifications-screen.tsx": "14ba2e6975a2964d41d287c865ce2771",
+      "src/components/onboarding-analytics-screen.tsx": "7b6d288e25c82fa47d6f139cd3058a37",
+      "src/components/onboarding-progress-screen.tsx": "8ac4fe0c5c84d29f926ba799338103d1",
+      "src/components/onboarding-screen.tsx": "2e71976b25f1b410d09e2e722c36773e",
+      "src/components/onboarding/basic-profile-step.tsx": "c30a4db2231405f61d45e93eb3910496",
+      "src/components/onboarding/phone-verify-step.tsx": "1b2ebde2ab248138e2cfd790870e54b3",
+      "src/components/onboarding/reader-stages.tsx": "e4cc1e5cabebcb17c1b791a5ed6977a2",
+      "src/components/post-detail-screen.tsx": "f0faa15ea8f66407a35f1c933235c661",
+      "src/components/post-image.tsx": "75e7868fddf288a5cee0e51b4aefe00a",
+      "src/components/profile-circle-screen.tsx": "ecdbc3f31ce07cff7faffbb78bac1ff6",
+      "src/components/profile-edit-screen.tsx": "2213b28c973eb5a634e8d3e04399b67a",
+      "src/components/profile-screen.tsx": "8097f3f6ef65b53b52d86b6cc18a3017",
+      "src/components/profile-settings-screen.tsx": "8d29b169e12e94bffbc69d42151d3cd8",
+      "src/components/profile-stats-tab.tsx": "2a451c76615a37c927300006078f5a3c",
+      "src/components/recommendations-rail.tsx": "fbade75a373e611dfb51f5584c886794",
+      "src/components/reset-password-screen.tsx": "cb5db2856fd488d277dbb4b7299090e5",
+      "src/components/resume-onboarding-banner.tsx": "2b17ee028bc12c39fd9f9bd38be9726e",
+      "src/components/safe-await.tsx": "16de0bbbc0419c6fbea49f9a46d23efc",
+      "src/components/search-screen.tsx": "33016ae52981126557f8701989172718",
+      "src/components/settings/account-security-cards.tsx": "684d22a5c2c60c00b9f47de7e0496323",
+      "src/components/splash-screen.tsx": "bf44eab812952bb4461f6a5ee7becffb",
+      "src/components/timeline-filters.tsx": "0743e946f1b109fe3da6b9fcdbf66808",
+      "src/components/ui/accordion.tsx": "55f9dda62b4e3913c9b23e5015a86aef",
+      "src/components/ui/alert-dialog.tsx": "96350e949e9b7b674545430a410ab89c",
+      "src/components/ui/alert.tsx": "f993d7e96b1e25ce50e68ed97e11d2a8",
+      "src/components/ui/aspect-ratio.tsx": "c5c364545e1b25a94e9e752cd67ad048",
+      "src/components/ui/avatar.tsx": "72989cd32f72c4122802540ef32525a5",
+      "src/components/ui/badge.tsx": "81cade001fc4260f9943e18dcd79449b",
+      "src/components/ui/breadcrumb.tsx": "bb9ac254f12662b20d5d50b84308bf3a",
+      "src/components/ui/button.tsx": "7d07d520f486b12bd47373d694ecd2ee",
+      "src/components/ui/calendar.tsx": "d849cc610e2683271f3f1c47d093cf30",
+      "src/components/ui/card.tsx": "d6c48ea36221b9cdc3576d305d12d5d5",
+      "src/components/ui/carousel.tsx": "e324c68ae00cd5aed49317638abd429a",
+      "src/components/ui/chart.tsx": "6a3baf94f2e89f1f97d4d7a28f3622d2",
+      "src/components/ui/checkbox.tsx": "f78aac270ca482c8c2cb907ef6260462",
+      "src/components/ui/collapsible.tsx": "767631bbc344945c236f185f4078d71d",
+      "src/components/ui/command.tsx": "014782599cc838b021ec68b07ad4ea02",
+      "src/components/ui/context-menu.tsx": "3ba8244ea23df34a1dba92f3a1230dad",
+      "src/components/ui/dialog.tsx": "ef4fe8e7de8675730afe3d633b260e09",
+      "src/components/ui/drawer.tsx": "8be333e8fd8e42576b1b5f72f07f4337",
+      "src/components/ui/dropdown-menu.tsx": "28d6e98d3c7811fc0514bfa69416f087",
+      "src/components/ui/form.tsx": "1b0aa6302b9017ea2a1307c22a1d2983",
+      "src/components/ui/hover-card.tsx": "1442794c5ca2a78d69e4e613b315ed3d",
+      "src/components/ui/input-otp.tsx": "65625f2f1c4d731a760aeed7b54459d1",
+      "src/components/ui/input.tsx": "1d4cc52a4cd8afb3e18e45bda942bb8a",
+      "src/components/ui/label.tsx": "7e35df4ca8edd0835efd97ca7937ef92",
+      "src/components/ui/menubar.tsx": "3c4121a1e78d3f424a7295381a8997d3",
+      "src/components/ui/navigation-menu.tsx": "e85351147a02b29577ff83d188b63c24",
+      "src/components/ui/pagination.tsx": "fac6cdbb4bbf78b273d85cd36d6cbb49",
+      "src/components/ui/popover.tsx": "f18aa1da2144f25ee60795c539c51bcd",
+      "src/components/ui/progress.tsx": "55c462e5c9dd678dcf2c0c510b014ac4",
+      "src/components/ui/radio-group.tsx": "0e1ace237a5da3197e3eb1e6683faba9",
+      "src/components/ui/resizable.tsx": "d9fcb9203c749fcab4e125a99bb12a86",
+      "src/components/ui/scroll-area.tsx": "87b65d3eb26f2b02ff35a7acea585ba5",
+      "src/components/ui/select.tsx": "31ea1bbd6671833b010b2e852c8a55d0",
+      "src/components/ui/separator.tsx": "433d163c4ffa00b59398a0c293198b5e",
+      "src/components/ui/sheet.tsx": "0221fbf97b69611b47fcbc10bb27669a",
+      "src/components/ui/sidebar.tsx": "83c1623eb50ebc370d7b1b84a542e369",
+      "src/components/ui/skeleton.tsx": "41b182e6e2fc3805960d41e767d4a972",
+      "src/components/ui/slider.tsx": "4752f1bfa26426988d325599e01c335b",
+      "src/components/ui/sonner.tsx": "97f59f60be3413196d095fcbf7383216",
+      "src/components/ui/switch.tsx": "82f5d8b0c59bb7ff305caa9f502e79ff",
+      "src/components/ui/table.tsx": "7cc889989d53894b659903c73aded96e",
+      "src/components/ui/tabs.tsx": "56e725558c2ce72c18243bf51717f385",
+      "src/components/ui/textarea.tsx": "c7aad96fb9545210d53135a96c76ed6b",
+      "src/components/ui/toggle-group.tsx": "ac26383acf721d116ca8e3ab5c5355d5",
+      "src/components/ui/toggle.tsx": "ee8c5adac74e7242b85b544db1a8fbad",
+      "src/components/ui/tooltip.tsx": "67d71db5a1ab935695d1def497f5b8a6",
+      "src/components/user-profile-screen.tsx": "24d372a01b0e90ff21f065a44a64d317",
+      "src/components/verify-email-screen.tsx": "9d9d8f4f74880c4e006a39f87c4ef8b2",
+      "src/contexts/auth-context.tsx": "acd5081e74932df12fd927e40a70440a",
+      "src/hooks/use-mobile.tsx": "c0a0bdd4638c391a1dd06ac82074e60b",
+      "src/integrations/lovable/index.ts": "c997b4d5cc51f8fe73119e270709d8f1",
+      "src/integrations/supabase/auth-attacher.ts": "dad043cda134d909e52de0346c16625e",
+      "src/integrations/supabase/auth-middleware.ts": "5d9d831f79177b7c6327cbd794a97367",
+      "src/integrations/supabase/client.server.ts": "23f838ab7633e0a97e695f3c500d91aa",
+      "src/integrations/supabase/client.ts": "b40d27b03f346573ed0f76551e478ffb",
+      "src/integrations/supabase/cron-auth.ts": "6c04781ff98ada5977945fae55d39385",
+      "src/integrations/supabase/previewAuthStorage.ts": "bc45a76c9242c4b85d6d4345625c46e9",
+      "src/integrations/supabase/types.ts": "0e680121c82a41e8e32cfb4ee95cd362",
+      "src/lib/admin.functions.ts": "82b5f093c6199c80672df44f3537512a",
+      "src/lib/calendar.ts": "4ab7b7144e9587229f7cc1f5324596a9",
+      "src/lib/circle.functions.ts": "2a31a78d94e94156a170ad1a43a24345",
+      "src/lib/crash-reporting.ts": "dbd6699506705b28d9be851b2af612fa",
+      "src/lib/error-capture.ts": "f630d9686a9a989170f22eff4de7b30d",
+      "src/lib/error-page.ts": "8da0ddd7569bac2676b9a5c8edff8a36",
+      "src/lib/goodreads.server.ts": "c77568677a73b2d9c57bd58591d6144a",
+      "src/lib/lovable-error-reporting.ts": "77368331b8ef6e6edcf1a29b24a52d39",
+      "src/lib/onboarding-progress.functions.ts": "10253ed6ddbc1ba8b165d09c48d60262",
+      "src/lib/onboarding.functions.ts": "a8936e86f7cacd61269ccb9e4f73601f",
+      "src/lib/otp-telemetry.server.ts": "8462c875638b5de85a5213b35bcdd5a7",
+      "src/lib/phone-verification.functions.ts": "e25eb3c44e5cfa9254f74c85cf37ce7a",
+      "src/lib/profile-tabs.functions.ts": "30e64adfe102a35c82f2ad034673c311",
+      "src/lib/profile.server.ts": "9bfd8c7b753145c3abd0a4f1c765eeee",
+      "src/lib/react-integrity.ts": "734f56b88f5f27e6fb59b8ebecf8ae08",
+      "src/lib/reader-onboarding.ts": "d4b91d0dd63e9bfdf79922ecb6316367",
+      "src/lib/search-nav.ts": "a4263d4547d68dc99cf3f78be648a5c4",
+      "src/lib/security.functions.ts": "bb5b93439f0305d2fd111ce816fff46c",
+      "src/lib/seed.ts": "4d61d43e942f97f446dca1b87d9f4258",
+      "src/lib/share-preview.server.ts": "1495af9e80d0dfcae98e9d4eb1f0b56f",
+      "src/lib/share.functions.ts": "84d6f270493636275074cf4164d70fe4",
+      "src/lib/sms.server.ts": "223b38d87a232c7a7c86b250b2e9f6aa",
+      "src/lib/social.functions.ts": "154baee480f1c76c0cc73568b088daa6",
+      "src/lib/use-onboarding-tracker.ts": "76239c0ac959d7bc9fce26d1886dd03c",
+      "src/lib/use-push-alerts.ts": "435a8468784ae8e6311b78e684fb075d",
+      "src/lib/utils.ts": "d9837f38cc05303254571985e3164050",
+      "src/routeTree.gen.ts": "76bacd095b336e0b157fcb6ae6abdc33",
+      "src/router.tsx": "8f905e713b0eba7fa8148b7995a708c9",
+      "src/routes/README.md": "b3a2f259b66fd1a11f54b6d5ac83bf57",
+      "src/routes/__root.tsx": "ed49c70783f28aa1a01942a4c6339bda",
+      "src/routes/_authenticated.admin.otp.tsx": "26ca454ddf6fb61b5406ae12eefc30be",
+      "src/routes/_authenticated.admin.security.tsx": "5974b11d7ada25daf3492ab2f45e3a0f",
+      "src/routes/_authenticated.books.$id.tsx": "7c90d95def4a2ecd638d2db9fe084127",
+      "src/routes/_authenticated.books.tsx": "d2fc4b9c58aa4d3d795f25bca00b5280",
+      "src/routes/_authenticated.clubs.$id.chat.tsx": "9e469603a68cc937bf57d2d0b401bc91",
+      "src/routes/_authenticated.clubs.$id.tsx": "1b39a5ed46e8e0300d2c6a8acd719143",
+      "src/routes/_authenticated.create-post.tsx": "0fe48fb52a57178f0c50981d4f09fd2c",
+      "src/routes/_authenticated.diagnostics.tsx": "8901b73d35a1e61ac49b0e48498d7fa7",
+      "src/routes/_authenticated.journal.$slug.tsx": "d319ebbf9751b19965dde7a49ebf52d8",
+      "src/routes/_authenticated.messages.$id.tsx": "3aff42eecebabdb50a6be2f9926f1e89",
+      "src/routes/_authenticated.messages.tsx": "87c1a1ffa286416da228768fce8c81b8",
+      "src/routes/_authenticated.notifications.tsx": "99f7ea620ab483bb233a1e3af77576cc",
+      "src/routes/_authenticated.onboarding.tsx": "195a53ea945f8d280ed2feadcec949ed",
+      "src/routes/_authenticated.posts.$id.tsx": "2ae70f74b9587a75a5bfdeb75ecf4dec",
+      "src/routes/_authenticated.profile.circle.tsx": "9cb91dd6ee9aa59ce828898c7090c751",
+      "src/routes/_authenticated.profile.edit.tsx": "f31615dac75b4e8eaab3c1bb5411268b",
+      "src/routes/_authenticated.profile.index.tsx": "d9be06fa263c51fc0e2820b6869e1f0c",
+      "src/routes/_authenticated.profile.notifications.tsx": "880253bc708df5b2933b5e0baadd8e83",
+      "src/routes/_authenticated.profile.onboarding-analytics.tsx": "7b89ef143aa77fbd08beb1727fba51b3",
+      "src/routes/_authenticated.profile.onboarding-progress.tsx": "560cc0534a8e990af73d9f886b54a75a",
+      "src/routes/_authenticated.profile.reader-answers.tsx": "7d017cadff3358a3657c5218fc846a97",
+      "src/routes/_authenticated.profile.settings.tsx": "d96b6919c0bdb1ed03734cdae6f9db22",
+      "src/routes/_authenticated.readers.$id.tsx": "7a3db43c7a52f0769c20648129f55f3c",
+      "src/routes/_authenticated.search.tsx": "d2d5582085925332d4b3d4b27e5cc7e5",
+      "src/routes/_authenticated/clubs.tsx": "e89e71caa713ac438f44a9162512cc61",
+      "src/routes/_authenticated/discover.tsx": "19b5ecec781ef03b14779dc4e5847c0b",
+      "src/routes/_authenticated/home.tsx": "9791f4a9481735b5b39962b7b9f5506b",
+      "src/routes/_authenticated/route.tsx": "f1593fc68d6938962b37484368cba91f",
+      "src/routes/auth.email.tsx": "a3505bbab56fe603c209f29437f5199e",
+      "src/routes/auth.index.tsx": "5e77ef64adb67bb7f6f438e130bdb976",
+      "src/routes/auth.tsx": "0ff926b24523e2d4dd706d2c4d47930f",
+      "src/routes/goodreads.callback.tsx": "7f32ef2ec21a14bbe61b1bf42cad1f7a",
+      "src/routes/index.tsx": "5d07db152dc0a2920eba277aa2593af2",
+      "src/routes/reset-password.tsx": "2ea1cd03f77e4718ed7c97049f03a94e",
+      "src/routes/verify-email.tsx": "69c25df0f05eeed9c0f15049c7c00401",
+      "src/server.ts": "c7bbc49bb70e318af618d92775ee0f27",
+      "src/start.ts": "d77c1c12904be5077c6955d9b30071af",
+      "src/styles.css": "b6e4bfead8dd396d915a48922e31c6ca",
+      "supabase/config.toml": "968dda6de788069339678d542136e2e5",
+      "supabase/migrations/20260827224452_d5843d69-1998-4909-8438-1176db31893d.sql": "4a35bcd8671639667dbe4c7eb3efa9ed",
+      "supabase/migrations/20260828082256_25eaf70f-d5ac-47a1-8f11-3a72af5ca4c1.sql": "3b65b9c2dcbe26c15864c14097efc7a1",
+      "supabase/migrations/20260828082319_60bdd65f-873e-4ab5-8981-12c0f632789d.sql": "ef878b7cbc24db6980aa876824b10d1f",
+      "supabase/migrations/20260828154809_7a4334e4-e999-405b-854b-8bcea416c073.sql": "539792be5bc7131751d8ab6c2b1f4908",
+      "supabase/migrations/20260828154832_1c515529-f4e3-4133-a850-0d6bdcbcd3ed.sql": "9027862fa36d7e2c66bf1aa858427606",
+      "supabase/migrations/20260828210645_7cec63b3-623f-4bea-9757-5581ed5d59cc.sql": "93e032405ef2e150ef93ac43e65db75c",
+      "supabase/migrations/20260828212733_d6b04f09-bf1b-4a81-b62b-100e995f6670.sql": "c272b2f97bd47e8f8e07eead120ecd35",
+      "supabase/migrations/20260828213458_210dcd54-dbfb-4815-acc7-302bc0477739.sql": "0a70d8187016d5135947373bda0416e7",
+      "supabase/migrations/20260828214643_09f9100a-5317-47bd-b2c1-6d17f473ec00.sql": "3878866b00bf8196ab0395aa0d94243e",
+      "supabase/migrations/20260828214708_0b757b7d-d1e3-4b10-a0b3-66999a318e16.sql": "9dd17b00d2dd0c6bff0e805493c9b0f7",
+      "supabase/migrations/20260829091759_f1574e4e-751b-4899-96ff-5ab12980dac1.sql": "771821f44d0a05968f64fc1d4135b98d",
+      "supabase/migrations/20260829091914_725eb73a-541a-4d54-9731-b599d5914a8e.sql": "35d0ad93f8c98ce5d004093e4fdc4b04",
+      "supabase/migrations/20260829100645_02537316-969c-426c-8a1a-b9ca0433f96c.sql": "f89e9a514561e7614996e9bcd987d61b",
+      "supabase/migrations/20260829100712_964c85f8-c737-4d4d-8376-789e6f178904.sql": "394d4a34aaa1d07a23e648b3a7877207",
+      "supabase/migrations/20260829202901_9e537a43-14c1-4b64-ae84-69d66bab0acf.sql": "e301584d319fabf9350891a5a10df9f5",
+      "supabase/migrations/20260829203318_b63b9e9e-1c92-4f99-8f6c-5750c24dea66.sql": "efc7b114321a28c3f357527d0a38291c",
+      "supabase/migrations/20260829211633_67483060-740c-49c1-a1af-f89c895270e5.sql": "2ef2f32d3ab344849794cc9e78f3fba3",
+      "supabase/migrations/20260829212440_f53173f5-6f18-4513-b3a9-2e95043bb041.sql": "efa1d28d3cfc92adbef84b62d6552a50",
+      "supabase/migrations/20260829212459_5f7a24cf-0649-4440-a40c-4fdf02ab4cdc.sql": "2b759986cc5200cbcc509620a833b5e5",
+      "supabase/migrations/20260829213537_6e8281dd-d120-4925-a3b2-d40027c6d32f.sql": "9cea6416153ada34048b7e8f939d58fa",
+      "supabase/migrations/20260829223855_73e2726c-cb05-483b-9898-964d6e6c06c4.sql": "467350712240defd3e5e1def6cde3d5b",
+      "supabase/migrations/20260829224037_3eede89d-a792-4f36-93d9-6a578b18e374.sql": "0d99f5c5442ee565d75d971359d18b5e",
+      "supabase/migrations/20260829224331_89f1f1fe-2389-4bc9-9c99-2fa876d176e3.sql": "255592686d80124fdd941feca96968ee",
+      "supabase/migrations/20260829224406_5edbb910-486e-4322-ae23-7361dad5f458.sql": "b1ba3fe705cb43dfed159d6db871cbef",
+      "supabase/migrations/20260829225719_f98a46c5-4473-4552-97f3-8929f2cbd544.sql": "45b61c439467733fa987bfd4b54291c0",
+      "tsconfig.json": "e84e5c7fe88e3c5a4d54f55a816d42c1",
+      "vite.config.ts": "d67e8217e5f31b87c276b6357c9aedcf"
+    },
+    "pipeline_version": 8
+  },
+  "tokens": {
+    "color": [
+      {
+        "name": "--paper",
+        "raw": "oklch(0.98 0 0)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ink",
+        "raw": "oklch(0.2 0.02 264)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--primary",
+        "raw": "oklch(0.75 0.18 155)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--primary-foreground",
+        "raw": "oklch(0.2 0.02 264)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--secondary",
+        "raw": "oklch(0.64 0.2 25)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--secondary-foreground",
+        "raw": "oklch(0.98 0 0)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--forest",
+        "raw": "oklch(0.4 0.08 155)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--parchment",
+        "raw": "oklch(0.96 0.02 90)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--muted",
+        "raw": "oklch(0.94 0.01 90)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--muted-foreground",
+        "raw": "oklch(0.55 0.03 264)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--border",
+        "raw": "oklch(0.88 0.01 264)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--input",
+        "raw": "oklch(0.88 0.01 264)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ring",
+        "raw": "oklch(0.75 0.18 155)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--destructive",
+        "raw": "oklch(0.6 0.22 25)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--destructive-foreground",
+        "raw": "oklch(0.98 0 0)",
+        "source": "src/styles.css"
+      }
+    ],
+    "typography": [
+      {
+        "name": "--font-heading",
+        "raw": "\"Outfit\", sans-serif",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--font-body",
+        "raw": "\"Manrope\", sans-serif",
+        "source": "src/styles.css"
+      }
+    ],
+    "radius": [
+      {
+        "name": "--radius-sm",
+        "raw": "calc(var(--radius) - 4px)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--radius-md",
+        "raw": "calc(var(--radius) - 2px)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--radius-xl",
+        "raw": "calc(var(--radius) + 4px)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--radius-2xl",
+        "raw": "calc(var(--radius) + 8px)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--radius-3xl",
+        "raw": "calc(var(--radius) + 12px)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--radius-4xl",
+        "raw": "calc(var(--radius) + 16px)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--radius",
+        "raw": "0.75rem",
+        "source": "src/styles.css"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "AdminOtpScreen",
+      "file": "src/components/admin-otp-screen",
+      "import_path": ""
+    },
+    {
+      "name": "AdminSecurityScreen",
+      "file": "src/components/admin-security-screen",
+      "import_path": ""
+    },
+    {
+      "name": "AppErrorBoundary",
+      "file": "src/components/app-error-boundary",
+      "import_path": "",
+      "props": [
+        {
+          "name": "children",
+          "type": "any",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "ArticleScreen",
+      "file": "src/components/article-screen",
+      "import_path": ""
+    },
+    {
+      "name": "AuthScreen",
+      "file": "src/components/auth-screen",
+      "import_path": ""
+    },
+    {
+      "name": "BookDetailScreen",
+      "file": "src/components/book-detail-screen",
+      "import_path": ""
+    },
+    {
+      "name": "BooksScreen",
+      "file": "src/components/books-screen",
+      "import_path": ""
+    },
+    {
+      "name": "BottomNav",
+      "file": "src/components/bottom-nav",
+      "import_path": ""
+    },
+    {
+      "name": "ChatScreen",
+      "file": "src/components/chat-screen",
+      "import_path": ""
+    },
+    {
+      "name": "ClubChatScreen",
+      "file": "src/components/club-chat-screen",
+      "import_path": ""
+    },
+    {
+      "name": "ClubDetailScreen",
+      "file": "src/components/club-detail-screen",
+      "import_path": ""
+    },
+    {
+      "name": "ClubEvents",
+      "file": "src/components/club-events",
+      "import_path": ""
+    },
+    {
+      "name": "ClubsScreen",
+      "file": "src/components/clubs-screen",
+      "import_path": ""
+    },
+    {
+      "name": "ConversationView",
+      "file": "src/components/conversation-view",
+      "import_path": ""
+    },
+    {
+      "name": "CreatePostScreen",
+      "file": "src/components/create-post-screen",
+      "import_path": ""
+    },
+    {
+      "name": "CreatePostSheet",
+      "file": "src/components/create-post-sheet",
+      "import_path": ""
+    },
+    {
+      "name": "DiscoverScreen",
+      "file": "src/components/discover-screen",
+      "import_path": ""
+    },
+    {
+      "name": "EmailAuthScreen",
+      "file": "src/components/email-auth-screen",
+      "import_path": ""
+    },
+    {
+      "name": "GoodreadsPanel",
+      "file": "src/components/goodreads-panel",
+      "import_path": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "any",
+          "required": true
+        },
+        {
+          "name": "onChange",
+          "type": "function"
+        },
+        {
+          "name": "invalidateKeys",
+          "type": "any"
+        },
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "subtitle",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "HomeScreen",
+      "file": "src/components/home-screen",
+      "import_path": ""
+    },
+    {
+      "name": "FeedSkeleton",
+      "file": "src/components/home-skeleton",
+      "import_path": ""
+    },
+    {
+      "name": "RailSkeleton",
+      "file": "src/components/home-skeleton",
+      "import_path": ""
+    },
+    {
+      "name": "MessagesScreen",
+      "file": "src/components/messages-screen",
+      "import_path": ""
+    },
+    {
+      "name": "NotificationPreferencesScreen",
+      "file": "src/components/notification-preferences-screen",
+      "import_path": ""
+    },
+    {
+      "name": "NotificationsScreen",
+      "file": "src/components/notifications-screen",
+      "import_path": ""
+    },
+    {
+      "name": "OnboardingAnalyticsScreen",
+      "file": "src/components/onboarding-analytics-screen",
+      "import_path": ""
+    },
+    {
+      "name": "OnboardingProgressScreen",
+      "file": "src/components/onboarding-progress-screen",
+      "import_path": ""
+    },
+    {
+      "name": "OnboardingScreen",
+      "file": "src/components/onboarding-screen",
+      "import_path": ""
+    },
+    {
+      "name": "BasicProfileStep",
+      "file": "src/components/onboarding/basic-profile-step",
+      "import_path": "",
+      "props": [
+        {
+          "name": "identity",
+          "type": "object",
+          "required": true
+        },
+        {
+          "name": "profile",
+          "type": "object",
+          "required": true
+        },
+        {
+          "name": "isGoogle",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "name": "onDone",
+          "type": "function",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "PhoneVerifyStep",
+      "file": "src/components/onboarding/phone-verify-step",
+      "import_path": "",
+      "props": [
+        {
+          "name": "phone",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "onBack",
+          "type": "function",
+          "required": true
+        },
+        {
+          "name": "onVerified",
+          "type": "function",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "StageHeader",
+      "file": "src/components/onboarding/reader-stages",
+      "import_path": ""
+    },
+    {
+      "name": "ChipGroup",
+      "file": "src/components/onboarding/reader-stages",
+      "import_path": ""
+    },
+    {
+      "name": "CardGroup",
+      "file": "src/components/onboarding/reader-stages",
+      "import_path": ""
+    },
+    {
+      "name": "StageProgress",
+      "file": "src/components/onboarding/reader-stages",
+      "import_path": ""
+    },
+    {
+      "name": "SelectionHint",
+      "file": "src/components/onboarding/reader-stages",
+      "import_path": ""
+    },
+    {
+      "name": "PostDetailScreen",
+      "file": "src/components/post-detail-screen",
+      "import_path": ""
+    },
+    {
+      "name": "PostImage",
+      "file": "src/components/post-image",
+      "import_path": ""
+    },
+    {
+      "name": "ProfileCircleScreen",
+      "file": "src/components/profile-circle-screen",
+      "import_path": ""
+    },
+    {
+      "name": "ProfileEditScreen",
+      "file": "src/components/profile-edit-screen",
+      "import_path": ""
+    },
+    {
+      "name": "ProfileScreen",
+      "file": "src/components/profile-screen",
+      "import_path": ""
+    },
+    {
+      "name": "ProfileSettingsScreen",
+      "file": "src/components/profile-settings-screen",
+      "import_path": ""
+    },
+    {
+      "name": "ProfileStatsTab",
+      "file": "src/components/profile-stats-tab",
+      "import_path": ""
+    },
+    {
+      "name": "RecommendationsRail",
+      "file": "src/components/recommendations-rail",
+      "import_path": ""
+    },
+    {
+      "name": "ResetPasswordScreen",
+      "file": "src/components/reset-password-screen",
+      "import_path": ""
+    },
+    {
+      "name": "ResumeOnboardingBanner",
+      "file": "src/components/resume-onboarding-banner",
+      "import_path": ""
+    },
+    {
+      "name": "SafeAwait",
+      "file": "src/components/safe-await",
+      "import_path": ""
+    },
+    {
+      "name": "SearchScreen",
+      "file": "src/components/search-screen",
+      "import_path": ""
+    },
+    {
+      "name": "ChangeEmailCard",
+      "file": "src/components/settings/account-security-cards",
+      "import_path": ""
+    },
+    {
+      "name": "ChangePhoneCard",
+      "file": "src/components/settings/account-security-cards",
+      "import_path": ""
+    },
+    {
+      "name": "SplashScreen",
+      "file": "src/components/splash-screen",
+      "import_path": ""
+    },
+    {
+      "name": "TimelineFilters",
+      "file": "src/components/timeline-filters",
+      "import_path": ""
+    },
+    {
+      "name": "AlertDialog",
+      "file": "src/components/ui/alert-dialog",
+      "import_path": ""
+    },
+    {
+      "name": "AlertDialogPortal",
+      "file": "src/components/ui/alert-dialog",
+      "import_path": ""
+    },
+    {
+      "name": "AlertDialogOverlay",
+      "file": "src/components/ui/alert-dialog",
+      "import_path": ""
+    },
+    {
+      "name": "AlertDialogTrigger",
+      "file": "src/components/ui/alert-dialog",
+      "import_path": ""
+    },
+    {
+      "name": "AlertDialogContent",
+      "file": "src/components/ui/alert-dialog",
+      "import_path": ""
+    },
+    {
+      "name": "AlertDialogHeader",
+      "file": "src/components/ui/alert-dialog",
+      "import_path": ""
+    },
+    {
+      "name": "AlertDialogFooter",
+      "file": "src/components/ui/alert-dialog",
+      "import_path": ""
+    },
+    {
+      "name": "AlertDialogTitle",
+      "file": "src/components/ui/alert-dialog",
+      "import_path": ""
+    },
+    {
+      "name": "AlertDialogDescription",
+      "file": "src/components/ui/alert-dialog",
+      "import_path": ""
+    },
+    {
+      "name": "AlertDialogAction",
+      "file": "src/components/ui/alert-dialog",
+      "import_path": ""
+    },
+    {
+      "name": "AlertDialogCancel",
+      "file": "src/components/ui/alert-dialog",
+      "import_path": ""
+    },
+    {
+      "name": "Avatar",
+      "file": "src/components/ui/avatar",
+      "import_path": ""
+    },
+    {
+      "name": "AvatarImage",
+      "file": "src/components/ui/avatar",
+      "import_path": ""
+    },
+    {
+      "name": "AvatarFallback",
+      "file": "src/components/ui/avatar",
+      "import_path": ""
+    },
+    {
+      "name": "Button",
+      "file": "src/components/ui/button",
+      "import_path": "",
+      "props": [
+        {
+          "name": "variant",
+          "type": "enum",
+          "values": [
+            "default",
+            "destructive",
+            "outline",
+            "secondary",
+            "ghost",
+            "link"
+          ],
+          "default": "default"
+        },
+        {
+          "name": "size",
+          "type": "enum",
+          "values": [
+            "default",
+            "sm",
+            "lg",
+            "icon"
+          ],
+          "default": "default"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "false"
+        }
+      ]
+    },
+    {
+      "name": "Dialog",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogPortal",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogOverlay",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogTrigger",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogClose",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogContent",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogHeader",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogFooter",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogTitle",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogDescription",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "InputOTP",
+      "file": "src/components/ui/input-otp",
+      "import_path": ""
+    },
+    {
+      "name": "InputOTPGroup",
+      "file": "src/components/ui/input-otp",
+      "import_path": ""
+    },
+    {
+      "name": "InputOTPSlot",
+      "file": "src/components/ui/input-otp",
+      "import_path": ""
+    },
+    {
+      "name": "InputOTPSeparator",
+      "file": "src/components/ui/input-otp",
+      "import_path": ""
+    },
+    {
+      "name": "Input",
+      "file": "src/components/ui/input",
+      "import_path": ""
+    },
+    {
+      "name": "Label",
+      "file": "src/components/ui/label",
+      "import_path": ""
+    },
+    {
+      "name": "Progress",
+      "file": "src/components/ui/progress",
+      "import_path": ""
+    },
+    {
+      "name": "Sheet",
+      "file": "src/components/ui/sheet",
+      "import_path": "",
+      "props": [
+        {
+          "name": "side",
+          "type": "enum",
+          "values": [
+            "top",
+            "bottom",
+            "left",
+            "right"
+          ],
+          "default": "right"
+        }
+      ]
+    },
+    {
+      "name": "SheetPortal",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetOverlay",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetTrigger",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetClose",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetContent",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetHeader",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetFooter",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetTitle",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetDescription",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "Switch",
+      "file": "src/components/ui/switch",
+      "import_path": ""
+    },
+    {
+      "name": "Textarea",
+      "file": "src/components/ui/textarea",
+      "import_path": ""
+    },
+    {
+      "name": "UserProfileScreen",
+      "file": "src/components/user-profile-screen",
+      "import_path": ""
+    },
+    {
+      "name": "VerifyEmailScreen",
+      "file": "src/components/verify-email-screen",
+      "import_path": ""
+    },
+    {
+      "name": "AuthProvider",
+      "file": "src/contexts/auth-context",
+      "import_path": ""
+    },
+    {
+      "name": "Constants",
+      "file": "src/integrations/supabase/types",
+      "import_path": ""
+    }
+  ]
+}
