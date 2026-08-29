@@ -197,28 +197,84 @@ export function ProfileCircleScreen({
     return `${window.location.origin}/profile/circle?${params.toString()}`;
   }, [tab, debounced, sort, filter, matchCount, shareOpen]);
 
-  const previewTitle = `My ${tab} on Circle`;
-  const previewDescription = debounced
-    ? `${matchCount} ${matchCount === 1 ? "match" : "matches"} for “${debounced}” in my ${tab}.`
-    : `${tab === "followers" ? counts.followers : counts.following} readers in my ${tab} on Circle.`;
+  // Server-generated (and server-cached) preview metadata for this link.
+  const previewQuery = useQuery({
+    queryKey: ["share-preview", tab, debounced],
+    queryFn: () => fetchSharePreview({ data: { tab, query: debounced } }),
+    enabled: shareOpen,
+    staleTime: 5 * 60 * 1000,
+  });
+  const preview = previewQuery.data;
+  const previewLoading = shareOpen && previewQuery.isLoading;
+  const previewTitle = preview?.title ?? (debounced ? `“${debounced}” in my ${tab} — Circle` : `My ${tab} — Circle`);
+  const previewMatches = preview?.matchCount ?? (previewQuery.isError ? null : matchCount);
+  const previewDescription =
+    preview?.description ??
+    (debounced
+      ? `Readers matching “${debounced}” in my ${tab} on Circle.`
+      : `${tab === "followers" ? counts.followers : counts.following} readers in my ${tab} on Circle.`);
+  const previewDegraded = Boolean(preview?.degraded) || previewQuery.isError;
+
+  function track(eventType: ShareEventType) {
+    void trackShare({
+      data: {
+        eventType,
+        surface: "profile_circle",
+        tab,
+        query: debounced,
+        ...(typeof previewMatches === "number" ? { matchCount: previewMatches } : {}),
+      },
+    }).catch(() => undefined);
+  }
+
+  // Analytics: one view event per opening of the share sheet.
+  useEffect(() => {
+    if (!shareOpen) return;
+    track("preview_view");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shareOpen]);
+
+  /** Warm the shared destination so tapping the preview opens instantly. */
+  async function prefetchSharedView() {
+    track("preview_tap");
+    const search = {
+      tab,
+      ...(debounced ? { q: debounced } : {}),
+      ...(sort !== "alphabetical" ? { sort } : {}),
+      ...(filter !== "all" ? { filter } : {}),
+      ...(scrollOffset.current > 0 ? { s: Math.round(scrollOffset.current) } : {}),
+      ...(typeof previewMatches === "number" && previewMatches > 0 ? { n: previewMatches } : {}),
+    };
+    await Promise.allSettled([
+      router.preloadRoute({ to: "/profile/circle", search }),
+      queryClient.prefetchInfiniteQuery({
+        queryKey: ["circle-page", tab, debounced, sort, filter],
+        initialPageParam: 0,
+        queryFn: ({ pageParam }) =>
+          fetchPage({ data: { tab, page: pageParam as number, query: debounced, sort, filter } }),
+      }),
+    ]);
+  }
 
   async function shareCircle() {
     try {
+      track("share_open");
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({ title: previewTitle, text: previewDescription, url: shareUrl });
         toast.success("Link shared");
         setShareOpen(false);
         return;
       }
-      await copyShareLink();
+      await copyShareLink({ silentTracking: true });
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return;
       toast.error("Couldn't share this link");
     }
   }
 
-  async function copyShareLink() {
+  async function copyShareLink(opts?: { silentTracking?: boolean }) {
     try {
+      if (!opts?.silentTracking) track("copy_click");
       await navigator.clipboard.writeText(shareUrl);
       toast.success("Link copied — it opens right where you left off");
       setShareOpen(false);
@@ -226,6 +282,7 @@ export function ProfileCircleScreen({
       toast.error("Couldn't copy this link");
     }
   }
+
 
   // Restore an exact scroll offset shared through the link.
   useLayoutEffect(() => {
