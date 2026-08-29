@@ -176,26 +176,44 @@ export const getFeed = createServerFn({ method: "GET" })
 
 export const createPost = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { content: string; bookId?: string | null; clubId?: string | null; rating?: number | null }) => {
-    if (!input.content?.trim()) throw new Error("Write something first");
-    return input;
+  .inputValidator((input: { content: string; bookId?: string | null; clubId?: string | null; rating?: number | null; imagePath?: string | null }) => {
+    const content = (input.content ?? "").trim();
+    if (!content) throw new Error("Write something before publishing");
+    if (content.length > 2000) throw new Error("Posts are limited to 2000 characters");
+    if (input.rating != null && (input.rating < 1 || input.rating > 5)) throw new Error("Rating must be between 1 and 5");
+    if (input.rating != null && !input.bookId) throw new Error("Attach a book to rate it");
+    return { ...input, content };
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    if (data.imagePath && !data.imagePath.startsWith(`${userId}/`)) {
+      throw new Error("Invalid attachment");
+    }
+    if (data.clubId) {
+      const { data: membership } = await supabase
+        .from("club_memberships")
+        .select("id")
+        .eq("club_id", data.clubId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!membership) throw new Error("Join the circle before posting to it");
+    }
     const { data: post, error } = await supabase
       .from("posts")
       .insert({
         user_id: userId,
-        content: data.content.trim(),
+        content: data.content,
         book_id: data.bookId ?? null,
         club_id: data.clubId ?? null,
         rating: data.rating ?? null,
+        image_url: data.imagePath ?? null,
       })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
     return post;
   });
+
 
 export const toggleLike = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -429,29 +447,143 @@ export const toggleClubMembership = createServerFn({ method: "POST" })
 
 /* --------------------------------- discover -------------------------------- */
 
+export type SearchType = "All" | "People" | "Circles" | "Books" | "Posts";
+
+const SEARCH_TYPES: SearchType[] = ["All", "People", "Circles", "Books", "Posts"];
+
 export const searchCircle = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { query: string }) => input)
+  .inputValidator((input: { query: string; type?: string }) => ({
+    query: (input.query ?? "").trim().slice(0, 100),
+    type: (SEARCH_TYPES.includes((input.type ?? "All") as SearchType) ? input.type : "All") as SearchType,
+  }))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const q = data.query.trim();
+    const { supabase, userId } = context;
+    const q = data.query;
     const like = `%${q}%`;
+    const type = data.type;
+    const want = (t: SearchType) => type === "All" || type === t;
 
-    const [{ data: books }, { data: clubs }, { data: people }] = await Promise.all([
-      q
+    const emptyRows = <T,>() => Promise.resolve({ data: [] as T[] });
+
+    const booksP = want("Books")
+      ? q
         ? supabase.from("books").select("*").or(`title.ilike.${like},author.ilike.${like}`).limit(20)
-        : supabase.from("books").select("*").order("rating", { ascending: false }).limit(20),
-      q
-        ? supabase.from("clubs").select("*").or(`name.ilike.${like},category.ilike.${like}`).limit(20)
-        : supabase.from("clubs").select("*").order("member_count", { ascending: false }).limit(20),
-      q
+        : supabase.from("books").select("*").order("rating", { ascending: false }).limit(20)
+      : emptyRows<never>();
+
+    const clubsP = want("Circles")
+      ? q
+        ? supabase.from("clubs").select("*").or(`name.ilike.${like},category.ilike.${like},description.ilike.${like}`).limit(20)
+        : supabase.from("clubs").select("*").order("member_count", { ascending: false }).limit(20)
+      : emptyRows<never>();
+
+    const peopleP = want("People")
+      ? q
         ? supabase
             .from("profiles")
             .select("user_id, username, display_name, avatar_url, bio")
             .or(`username.ilike.${like},display_name.ilike.${like}`)
             .limit(20)
-        : supabase.from("profiles").select("user_id, username, display_name, avatar_url, bio").limit(20),
+        : supabase.from("profiles").select("user_id, username, display_name, avatar_url, bio").limit(20)
+      : emptyRows<never>();
+
+    const postsP = want("Posts")
+      ? q
+        ? supabase
+            .from("posts")
+            .select("id, content, created_at, user_id, likes_count, comments_count, image_url, books(id, title, author, cover_url), clubs(id, name)")
+            .ilike("content", like)
+            .order("created_at", { ascending: false })
+            .limit(20)
+        : supabase
+            .from("posts")
+            .select("id, content, created_at, user_id, likes_count, comments_count, image_url, books(id, title, author, cover_url), clubs(id, name)")
+            .order("created_at", { ascending: false })
+            .limit(10)
+      : emptyRows<never>();
+
+    const [{ data: books }, { data: clubs }, { data: people }, { data: posts }] = await Promise.all([
+      booksP,
+      clubsP,
+      peopleP,
+      postsP,
     ]);
 
-    return { books: books ?? [], clubs: clubs ?? [], people: people ?? [] };
+    const peopleList = (people ?? []).filter((p) => p.user_id !== userId);
+    const postList = posts ?? [];
+
+    const authorIds = [...new Set(postList.map((p) => p.user_id))];
+    const [{ data: follows }, { data: memberships }, { data: authors }] = await Promise.all([
+      peopleList.length
+        ? supabase
+            .from("follows")
+            .select("following_id")
+            .eq("follower_id", userId)
+            .in("following_id", peopleList.map((p) => p.user_id))
+        : emptyRows<{ following_id: string }>(),
+      (clubs ?? []).length
+        ? supabase
+            .from("club_memberships")
+            .select("club_id")
+            .eq("user_id", userId)
+            .in("club_id", (clubs ?? []).map((c) => c.id))
+        : emptyRows<{ club_id: string }>(),
+      authorIds.length
+        ? supabase.from("profiles").select("user_id, username, display_name, avatar_url").in("user_id", authorIds)
+        : emptyRows<{ user_id: string; username: string; display_name: string | null; avatar_url: string | null }>(),
+    ]);
+
+    const followingSet = new Set((follows ?? []).map((f) => f.following_id));
+    const memberSet = new Set((memberships ?? []).map((m) => m.club_id));
+    const authorMap = new Map((authors ?? []).map((a) => [a.user_id, a]));
+
+    return {
+      books: books ?? [],
+      clubs: (clubs ?? []).map((c) => ({ ...c, isMember: memberSet.has(c.id) })),
+      people: peopleList.map((p) => ({ ...p, isFollowing: followingSet.has(p.user_id) })),
+      posts: postList.map((p) => ({ ...p, author: authorMap.get(p.user_id) ?? null })),
+    };
   });
+
+/* ------------------------------ recent searches ----------------------------- */
+
+export const getRecentSearches = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data } = await supabase
+      .from("search_recents")
+      .select("id, query, filter, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(8);
+    return data ?? [];
+  });
+
+export const saveRecentSearch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { query: string; filter?: string }) => {
+    const query = (input.query ?? "").trim().slice(0, 100);
+    if (query.length < 2) throw new Error("Query too short");
+    return { query, filter: SEARCH_TYPES.includes((input.filter ?? "All") as SearchType) ? input.filter! : "All" };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await supabase
+      .from("search_recents")
+      .upsert(
+        { user_id: userId, query: data.query, filter: data.filter, created_at: new Date().toISOString() },
+        { onConflict: "user_id,query,filter" },
+      );
+    return { ok: true };
+  });
+
+export const clearRecentSearches = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    await supabase.from("search_recents").delete().eq("user_id", userId);
+    return { ok: true };
+  });
+

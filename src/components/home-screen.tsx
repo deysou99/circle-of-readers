@@ -8,6 +8,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { getFeed, toggleLike } from "@/lib/circle.functions";
 import { ResumeOnboardingBanner } from "@/components/resume-onboarding-banner";
 import { CreatePostSheet } from "@/components/create-post-sheet";
+import { PostImage } from "@/components/post-image";
+
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -117,6 +119,9 @@ export function HomeScreen() {
             <Link to="/posts/$id" params={{ id: post.id }}>
               <p className="mt-3 text-[15px] leading-relaxed text-ink">{post.content}</p>
             </Link>
+
+            {post.image_url && <PostImage path={post.image_url} className="mt-3 h-56 w-full rounded-xl object-cover" />}
+
 
             {post.books && (
               <Link to="/books/$id" params={{ id: post.books.id }} className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-paper p-2">

@@ -324,6 +324,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          image_url: string | null
           likes_count: number | null
           rating: number | null
           user_id: string
@@ -335,6 +336,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          image_url?: string | null
           likes_count?: number | null
           rating?: number | null
           user_id: string
@@ -346,6 +348,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           likes_count?: number | null
           rating?: number | null
           user_id?: string
@@ -501,6 +504,30 @@ export type Database = {
           reading_locations?: string[]
           traits?: Json
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      search_recents: {
+        Row: {
+          created_at: string
+          filter: string
+          id: string
+          query: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filter?: string
+          id?: string
+          query: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filter?: string
+          id?: string
+          query?: string
           user_id?: string
         }
         Relationships: []
