@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Settings, Share2, Users, Pencil, BarChart3, Star, MessageSquareText, Heart, BookOpen, Link2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ export const PROFILE_TAB_IDS: ProfileTabId[] = TABS.map((t) => t.id);
 
 type TabId = ProfileTabId;
 
-export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId } = {}) {
+export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId | undefined } = {}) {
   const fetchProfile = useServerFn(getMyProfile);
   const fetchBooks = useServerFn(getBooks);
   const fetchClubs = useServerFn(getClubs);
@@ -153,7 +153,7 @@ export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId } = {}
               return (
                 <button
                   key={t.id}
-                  onClick={() => setTab(t.id)}
+                  onClick={() => selectTab(t.id)}
                   className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-medium transition-colors ${
                     active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-ink"
                   }`}
