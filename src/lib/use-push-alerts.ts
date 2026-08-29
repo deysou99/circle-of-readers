@@ -68,14 +68,15 @@ export function usePushAlerts() {
 
   useEffect(() => {
     if (!pushOn || !(prefs as Prefs)?.event_reminders) return;
-    for (const e of (events ?? []) as { id: string; title: string; starts_at: string; myRsvp?: { status?: string; reminderEnabled?: boolean; reminderMinutes?: number } | null }[]) {
-      const rsvp = e.myRsvp;
-      if (!rsvp || rsvp.status === "not_going" || rsvp.reminderEnabled === false) continue;
+    for (const rsvp of events ?? []) {
+      const event = rsvp.event;
+      if (!event) continue;
+      if (rsvp.status === "not_going" || rsvp.reminderEnabled === false) continue;
       const lead = (rsvp.reminderMinutes ?? 60) * 60 * 1000;
-      const untilStart = new Date(e.starts_at).getTime() - Date.now();
-      if (untilStart > 0 && untilStart <= lead && !firedReminders.current.has(e.id)) {
-        firedReminders.current.add(e.id);
-        notify("Discussion coming up", `${e.title} starts soon.`, `event-${e.id}`);
+      const untilStart = new Date(event.starts_at).getTime() - Date.now();
+      if (untilStart > 0 && untilStart <= lead && !firedReminders.current.has(event.id)) {
+        firedReminders.current.add(event.id);
+        notify("Discussion coming up", `${event.title} starts soon.`, `event-${event.id}`);
       }
     }
   }, [events, pushOn, prefs]);
