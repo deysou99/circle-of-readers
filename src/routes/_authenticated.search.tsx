@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SearchScreen } from "@/components/search-screen";
 
-type SearchParams = { club?: string; clubName?: string };
+type SearchParams = { club?: string | undefined; clubName?: string | undefined };
 
 export const Route = createFileRoute("/_authenticated/search")({
   component: SearchRoute,

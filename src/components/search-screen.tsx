@@ -55,7 +55,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
   );
 }
 
-export function SearchScreen({ clubId, clubName }: { clubId?: string; clubName?: string } = {}) {
+export function SearchScreen({ clubId, clubName }: { clubId?: string | undefined; clubName?: string | undefined } = {}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
