@@ -6,8 +6,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { readOwnProfile: readOwnProfileServer } = await import("@/lib/profile.server");
     const { supabase, userId } = context;
-    const { data } = await supabase.rpc("get_my_profile");
+    const { data } = await readOwnProfileServer(userId);
 
 
     const [{ count: followers }, { count: following }, { count: finished }, { count: clubs }] =
@@ -274,11 +275,12 @@ export const addComment = createServerFn({ method: "POST" })
 export const getBooks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { readOwnProfile: readOwnProfileServer } = await import("@/lib/profile.server");
     const { supabase, userId } = context;
     const [{ data: books }, { data: shelf }, { data: profile }] = await Promise.all([
       supabase.from("books").select("*").order("title"),
       supabase.from("user_books").select("*").eq("user_id", userId),
-      supabase.rpc("get_my_profile"),
+      readOwnProfileServer(userId),
     ]);
     return {
       books: books ?? [],

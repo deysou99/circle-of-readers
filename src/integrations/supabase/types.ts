@@ -515,47 +515,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      can_view_club: { Args: { _club_id: string }; Returns: boolean }
-      get_my_profile: {
-        Args: never
-        Returns: {
+      public_profiles: {
+        Row: {
           avatar_url: string | null
           bio: string | null
-          created_at: string
+          created_at: string | null
           display_name: string | null
-          email: string | null
-          favorite_genres: string[]
-          first_name: string | null
-          goodreads_connected: boolean
-          goodreads_last_sync_at: string | null
-          goodreads_profile: string | null
-          goodreads_stats: Json
-          goodreads_user_id: string | null
-          goodreads_verified_at: string | null
-          id: string
-          last_name: string | null
-          onboarded: boolean
-          onboarding_step: number
-          phone: string | null
-          phone_verified: boolean
-          phone_verified_at: string | null
-          profile_completed: boolean
-          reading_goal: number | null
-          reading_pace: string | null
-          updated_at: string
-          user_id: string
-          username: string
+          id: string | null
+          user_id: string | null
+          username: string | null
         }
-        SetofOptions: {
-          from: "*"
-          to: "profiles"
-          isOneToOne: true
-          isSetofReturn: false
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          user_id?: string | null
+          username?: string | null
         }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Relationships: []
       }
+    }
+    Functions: {
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

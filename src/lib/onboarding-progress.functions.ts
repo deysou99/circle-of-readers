@@ -19,10 +19,11 @@ const STAGE_KEYS: OnboardingStageKey[] = ["curiosity", "places", "after-book", "
 export const getOnboardingProgress = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { readOwnProfile: readOwnProfileServer } = await import("@/lib/profile.server");
     const { supabase, userId } = context;
 
     const [{ data: profile }, { data: reader }, { data: events }] = await Promise.all([
-      supabase.rpc("get_my_profile"),
+      readOwnProfileServer(userId),
       supabase.from("reader_profiles").select("*").eq("user_id", userId).maybeSingle(),
       supabase
         .from("onboarding_events")
