@@ -15,23 +15,42 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { getOnboardingFunnel } from "@/lib/onboarding-progress.functions";
+import {
+  getOnboardingFunnel,
+  getOnboardingRetention,
+} from "@/lib/onboarding-progress.functions";
 
 const PIE_COLORS = ["hsl(var(--primary))", "#2D4F3C", "#E83227", "#B8B2A4"];
 
+const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+
+function downloadCsv(name: string, lines: string[]) {
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${name}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function OnboardingAnalyticsScreen() {
   const fetchFunnel = useServerFn(getOnboardingFunnel);
+  const fetchRetention = useServerFn(getOnboardingRetention);
   const [signupMethod, setSignupMethod] = useState<string>("");
   const [device, setDevice] = useState<string>("");
+  const filterArgs = {
+    ...(signupMethod ? { signupMethod } : {}),
+    ...(device ? { device } : {}),
+  };
   const { data, isLoading } = useQuery({
     queryKey: ["onboarding-funnel", signupMethod, device],
-    queryFn: () =>
-      fetchFunnel({
-        data: {
-          ...(signupMethod ? { signupMethod } : {}),
-          ...(device ? { device } : {}),
-        },
-      }),
+    queryFn: () => fetchFunnel({ data: filterArgs }),
+    staleTime: 30_000,
+  });
+  const retention = useQuery({
+    queryKey: ["onboarding-retention", signupMethod, device],
+    queryFn: () => fetchRetention({ data: filterArgs }),
     staleTime: 30_000,
   });
   const [drillStage, setDrillStage] = useState<string | null>(null);
@@ -41,7 +60,6 @@ export function OnboardingAnalyticsScreen() {
 
   const exportCsv = () => {
     if (!data) return;
-    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const lines: string[] = [];
     lines.push("section,key,label,metric,value");
     Object.entries(data.totals).forEach(([k, v]) =>
@@ -55,6 +73,9 @@ export function OnboardingAnalyticsScreen() {
     data.resumePoints.forEach((r) =>
       lines.push(["resumePoints", r.key, r.label, "count", r.count].map(esc).join(",")),
     );
+    (["attempts", "failures", "fallbacks", "failureRate", "verifyFailures", "blocked", "phoneChanges"] as const).forEach(
+      (m) => lines.push(["sms", m, m, "count", data.sms[m]].map(esc).join(",")),
+    );
     lines.push("");
     lines.push("section,at,eventType,stageKey,signupMethod,device");
     data.timeline.forEach((e) =>
@@ -62,14 +83,23 @@ export function OnboardingAnalyticsScreen() {
         ["events", e.at, e.eventType, e.stageKey ?? "", e.signupMethod, e.device].map(esc).join(","),
       ),
     );
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `circle-onboarding-funnel-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv("circle-onboarding-funnel", lines);
   };
+
+  /** Exports every underlying event row for the active filters, for auditing. */
+  const exportEventRows = () => {
+    if (!data) return;
+    const lines = ["at,eventType,stageKey,stageIndex,sessionId,signupMethod,device"];
+    data.eventRows.forEach((e) =>
+      lines.push(
+        [e.at, e.eventType, e.stageKey ?? "", e.stageIndex ?? "", e.sessionId ?? "", e.signupMethod, e.device]
+          .map(esc)
+          .join(","),
+      ),
+    );
+    downloadCsv("circle-onboarding-events", lines);
+  };
+
 
   return (
     <div className="min-h-screen bg-paper pb-10 pt-safe-top">
