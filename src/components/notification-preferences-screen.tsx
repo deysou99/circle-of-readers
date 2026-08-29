@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Heart, MessageCircle, UserPlus, Users, CalendarClock, Mail, MessagesSquare, AtSign } from "lucide-react";
+import { ArrowLeft, BellRing, Eye, Heart, MessageCircle, UserPlus, Users, CalendarClock, Mail, MessagesSquare, AtSign } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getNotificationPreferences, updateNotificationPreferences } from "@/lib/social.functions";
+import { getNotificationPreferences, savePushSubscription, updateNotificationPreferences } from "@/lib/social.functions";
+import { registerPushDevice } from "@/lib/use-push-alerts";
 import { toast } from "sonner";
 
 type PrefKey =
@@ -52,8 +53,11 @@ export function NotificationPreferencesScreen() {
     queryFn: () => fetchPrefs(),
   });
 
+  const savePush = useServerFn(savePushSubscription);
+
   const mutation = useMutation({
-    mutationFn: (patch: Partial<Record<PrefKey, boolean>>) => updatePrefs({ data: patch }),
+    mutationFn: (patch: Partial<Record<PrefKey, boolean>> & { push_enabled?: boolean; seen_indicator_mode?: string }) =>
+      updatePrefs({ data: patch }),
     onSuccess: (updated) => {
       queryClient.setQueryData(["notification-preferences"], updated);
       toast.success("Notification preferences saved");
@@ -71,6 +75,78 @@ export function NotificationPreferencesScreen() {
       <p className="px-4 pt-4 text-sm text-muted-foreground">Choose exactly which alerts reach you. Everything else stays quiet.</p>
 
       {isLoading && <p className="px-4 pt-6 text-sm text-muted-foreground">Loading your preferences…</p>}
+
+      {!isLoading && data && (
+        <section className="px-4 pt-6">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Delivery</p>
+          <div className="mt-2 rounded-2xl border border-border bg-parchment p-2">
+            <div className="flex items-center justify-between gap-3 px-3 py-3">
+              <div className="flex items-start gap-3">
+                <BellRing size={18} className="mt-0.5 text-primary" />
+                <div>
+                  <p className="text-sm text-ink">Push notifications</p>
+                  <p className="text-xs text-muted-foreground">Event RSVP reminders and new message alerts on this device</p>
+                </div>
+              </div>
+              <Switch
+                checked={Boolean((data as Record<string, unknown>)["push_enabled"])}
+                disabled={mutation.isPending}
+                onCheckedChange={async (checked) => {
+                  if (checked) {
+                    const ok = await registerPushDevice(savePush);
+                    if (!ok) {
+                      toast.error("Your browser blocked notifications. Enable them in site settings and try again.");
+                      return;
+                    }
+                  }
+                  mutation.mutate({ push_enabled: checked });
+                }}
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {!isLoading && data && (
+        <section className="px-4 pt-6">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Privacy</p>
+          <div className="mt-2 rounded-2xl border border-border bg-parchment p-2">
+            <div className="px-3 py-3">
+              <div className="flex items-start gap-3">
+                <Eye size={18} className="mt-0.5 text-primary" />
+                <div>
+                  <p className="text-sm text-ink">Seen indicators</p>
+                  <p className="text-xs text-muted-foreground">
+                    Choose how "seen" appears in your direct messages and group chats. Hiding them also stops sharing your read
+                    receipts with others.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-2">
+                {[
+                  { value: "full", label: "Full" },
+                  { value: "initials", label: "Initials only" },
+                  { value: "hidden", label: "Hidden" },
+                ].map((opt) => {
+                  const active = ((data as Record<string, unknown>)["seen_indicator_mode"] ?? "full") === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      disabled={mutation.isPending}
+                      onClick={() => mutation.mutate({ seen_indicator_mode: opt.value })}
+                      className={`flex-1 rounded-full px-3 py-2 text-xs font-medium transition-colors ${
+                        active ? "bg-primary text-primary-foreground" : "border border-border bg-paper text-ink"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {!isLoading && data && GROUPS.map((group) => (
         <section key={group.title} className="px-4 pt-6">
