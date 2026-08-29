@@ -98,7 +98,10 @@ export function ProfileScreen({
   };
 
   async function shareProfile() {
-    const url = `${window.location.origin}/readers/${profile?.user_id ?? ""}?tab=${tab}`;
+    rememberScroll();
+    const offset = Math.round(scrollPositions.current[tab] ?? 0);
+    const params = new URLSearchParams({ tab, ...(offset > 0 ? { s: String(offset) } : {}) });
+    const url = `${window.location.origin}/readers/${profile?.user_id ?? ""}?${params.toString()}`;
     const shareData = {
       title: `${profile?.display_name ?? profile?.username ?? "My"} on Circle`,
       text: "Follow my reading on Circle by MyFlip",
@@ -107,15 +110,17 @@ export function ProfileScreen({
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share(shareData);
+        toast.success("Profile link shared");
         return;
       }
       await navigator.clipboard.writeText(url);
-      toast.success("Profile link copied");
+      toast.success("Profile link copied — it opens on this tab and spot");
     } catch (error) {
       if ((error as Error)?.name === "AbortError") return;
       toast.error("Couldn't share your profile link");
     }
   }
+
 
   return (
     <div className="min-h-screen bg-paper pb-6 pt-safe-top">
