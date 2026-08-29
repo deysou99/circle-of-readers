@@ -190,13 +190,15 @@ export const setEventRsvp = createServerFn({ method: "POST" })
 
 /* ------------------------------- messaging -------------------------------- */
 
+type MiniProfile = { user_id: string; username: string; display_name: string | null; avatar_url: string | null };
+
 async function participantProfiles(
   supabase: { from: (t: string) => any },
   userIds: string[],
-) {
-  if (!userIds.length) return new Map<string, { user_id: string; username: string; display_name: string | null; avatar_url: string | null }>();
+): Promise<Map<string, MiniProfile>> {
+  if (!userIds.length) return new Map<string, MiniProfile>();
   const { data } = await supabase.from("profiles").select("user_id, username, display_name, avatar_url").in("user_id", userIds);
-  return new Map((data ?? []).map((p: { user_id: string }) => [p.user_id, p]));
+  return new Map<string, MiniProfile>(((data ?? []) as MiniProfile[]).map((p) => [p.user_id, p]));
 }
 
 export const getConversations = createServerFn({ method: "GET" })
