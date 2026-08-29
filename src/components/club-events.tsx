@@ -84,7 +84,7 @@ export function ClubEvents({ clubId, canCreate }: { clubId: string; canCreate: b
 
       <div className="mt-3 space-y-3">
         {(events ?? []).map((e) => {
-          const status = e.myRsvp?.status ?? null;
+          const status = (e.myRsvp?.status ?? null) as "going" | "maybe" | "not_going" | null;
           const reminderOn = e.myRsvp?.reminderEnabled ?? true;
           return (
             <div key={e.id} className="rounded-2xl border border-border bg-parchment p-4">
