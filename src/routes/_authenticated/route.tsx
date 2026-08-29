@@ -57,14 +57,9 @@ function AuthenticatedLayout() {
   }
 
   if (!isAuthenticated) {
-    return (
-      <div className="phone-shell flex min-h-screen items-center justify-center bg-paper px-6">
-        <div className="text-center">
-          <p className="text-ink">Please sign in to continue.</p>
-        </div>
-      </div>
-    );
+    return <SignInRedirect />;
   }
+
 
   if (onOnboarding) {
     return <Outlet />;
@@ -74,6 +69,25 @@ function AuthenticatedLayout() {
     <div className="phone-shell relative min-h-screen bg-paper pb-[88px]">
       <Outlet />
       <BottomNav />
+    </div>
+  );
+}
+
+/**
+ * Never leaves an authenticated route sitting on a dead-end "please sign in"
+ * screen: as soon as we know there is no session, we send the reader to /auth.
+ */
+function SignInRedirect() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    // Defer a tick so the redirect never runs while this tree is still mounting.
+    const t = setTimeout(() => navigate({ to: "/auth", replace: true }), 0);
+    return () => clearTimeout(t);
+  }, [navigate]);
+
+  return (
+    <div className="phone-shell flex min-h-screen items-center justify-center bg-paper px-6">
+      <p className="text-sm text-muted-foreground">Taking you to sign in…</p>
     </div>
   );
 }

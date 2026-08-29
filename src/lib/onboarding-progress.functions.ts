@@ -147,14 +147,50 @@ export const getOnboardingFunnel = createServerFn({ method: "GET" })
       count: rows.filter((e) => e.event_type === "onboarding_resumed" && e.stage_index === index).length,
     }));
 
-    const timeline = rows.slice(-40).map((e) => ({
+    const allEventRows = rows.map((e) => ({
       eventType: e.event_type,
       stageKey: e.stage_key,
       stageIndex: e.stage_index,
+      sessionId: e.session_id,
       signupMethod: dimOf(e, "signupMethod"),
       device: dimOf(e, "device"),
       at: e.created_at,
     }));
+    const timeline = allEventRows.slice(-40);
+
+    // SMS / OTP delivery health for the same window.
+    const { data: otpRows } = await supabase
+      .from("otp_events")
+      .select("event_type, delivery_mode, attempts, error, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true })
+      .limit(2000);
+
+    const otp = otpRows ?? [];
+    const smsAttempts = otp.filter(
+      (e) => e.delivery_mode === "sms" && (e.event_type === "sent" || e.event_type === "sms_failed"),
+    ).length;
+    const smsFailures = otp.filter((e) => e.event_type === "sms_failed").length;
+    const fallbacks = otp.filter((e) => e.event_type === "fallback_in_app").length;
+
+    const byDay = new Map<string, { attempts: number; failures: number }>();
+    for (const e of otp) {
+      if (e.delivery_mode !== "sms" && e.event_type !== "sms_failed") continue;
+      const day = String(e.created_at).slice(0, 10);
+      const bucket = byDay.get(day) ?? { attempts: 0, failures: 0 };
+      if (e.event_type === "sent" || e.event_type === "sms_failed") bucket.attempts += 1;
+      if (e.event_type === "sms_failed") bucket.failures += 1;
+      byDay.set(day, bucket);
+    }
+    const smsTrend = Array.from(byDay.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-14)
+      .map(([day, v]) => ({
+        day,
+        attempts: v.attempts,
+        failures: v.failures,
+        failureRate: v.attempts > 0 ? Math.round((v.failures / v.attempts) * 100) : 0,
+      }));
 
     return {
       filters: {
@@ -166,5 +202,84 @@ export const getOnboardingFunnel = createServerFn({ method: "GET" })
       stages,
       resumePoints,
       timeline,
+      eventRows: allEventRows,
+      sms: {
+        attempts: smsAttempts,
+        failures: smsFailures,
+        fallbacks,
+        failureRate: smsAttempts > 0 ? Math.round((smsFailures / smsAttempts) * 100) : 0,
+        verifyFailures: otp.filter((e) => e.event_type === "verify_failed").length,
+        blocked: otp.filter((e) => e.event_type === "verify_blocked").length,
+        phoneChanges: otp.filter((e) => e.event_type === "phone_changed").length,
+        trend: smsTrend,
+      },
     };
   });
+
+/**
+ * Post-onboarding retention: whether the reader was active on day 1 and day 7
+ * after completing onboarding, broken down by signup method and device.
+ */
+export const getOnboardingRetention = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: FunnelFilters | undefined) => input ?? {})
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: completions } = await supabase
+      .from("onboarding_events")
+      .select("metadata, created_at")
+      .eq("user_id", userId)
+      .eq("event_type", "onboarding_completed")
+      .order("created_at", { ascending: true })
+      .limit(50);
+
+    const dim = (meta: unknown, key: string) => {
+      const m = (meta ?? {}) as Record<string, unknown>;
+      const v = m[key];
+      return typeof v === "string" && v ? v : "unknown";
+    };
+
+    const cohorts = (completions ?? []).filter(
+      (c) =>
+        (!data.signupMethod || dim(c.metadata, "signupMethod") === data.signupMethod) &&
+        (!data.device || dim(c.metadata, "device") === data.device),
+    );
+
+    if (cohorts.length === 0) {
+      return { cohorts: [] as Array<never>, summary: { total: 0, day1: 0, day7: 0 } };
+    }
+
+    const since = cohorts[0]!.created_at;
+    const [{ data: posts }, { data: comments }] = await Promise.all([
+      supabase.from("posts").select("created_at").eq("user_id", userId).gte("created_at", since),
+      supabase.from("comments").select("created_at").eq("user_id", userId).gte("created_at", since),
+    ]);
+    const activity = [...(posts ?? []), ...(comments ?? [])].map((a) =>
+      new Date(a.created_at as string).getTime(),
+    );
+
+    const DAY = 86_400_000;
+    const rows = cohorts.map((c) => {
+      const start = new Date(c.created_at).getTime();
+      const activeWithin = (days: number) =>
+        activity.some((t) => t > start && t <= start + days * DAY);
+      return {
+        completedAt: c.created_at,
+        signupMethod: dim(c.metadata, "signupMethod"),
+        device: dim(c.metadata, "device"),
+        day1: activeWithin(1),
+        day7: activeWithin(7),
+      };
+    });
+
+    return {
+      cohorts: rows,
+      summary: {
+        total: rows.length,
+        day1: rows.filter((r) => r.day1).length,
+        day7: rows.filter((r) => r.day7).length,
+      },
+    };
+  });
+

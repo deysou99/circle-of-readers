@@ -13,6 +13,9 @@ import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/contexts/auth-context";
+import { AppErrorBoundary } from "@/components/app-error-boundary";
+import { isReactInstanceError } from "@/lib/react-integrity";
+
 
 function NotFoundComponent() {
   return (
@@ -39,6 +42,7 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const frameworkCrash = isReactInstanceError(error);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
@@ -47,13 +51,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-paper px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-ink">
-          This page didn't load
+          {frameworkCrash ? "Circle needs a hard refresh" : "This page didn't load"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          {frameworkCrash
+            ? "Two copies of the app framework were loaded, usually from a stale cached bundle. A hard refresh clears it."
+            : "Something went wrong on our end. You can try refreshing or head back home."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
+
             onClick={() => {
               router.invalidate();
               reset();
@@ -124,11 +131,14 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Outlet />
-      </AuthProvider>
-      <Toaster position="top-center" richColors />
-    </QueryClientProvider>
+    <AppErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Outlet />
+        </AuthProvider>
+        <Toaster position="top-center" richColors />
+      </QueryClientProvider>
+    </AppErrorBoundary>
   );
+
 }

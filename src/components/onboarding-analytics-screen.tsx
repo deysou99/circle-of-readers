@@ -15,23 +15,42 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { getOnboardingFunnel } from "@/lib/onboarding-progress.functions";
+import {
+  getOnboardingFunnel,
+  getOnboardingRetention,
+} from "@/lib/onboarding-progress.functions";
 
 const PIE_COLORS = ["hsl(var(--primary))", "#2D4F3C", "#E83227", "#B8B2A4"];
 
+const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+
+function downloadCsv(name: string, lines: string[]) {
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${name}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function OnboardingAnalyticsScreen() {
   const fetchFunnel = useServerFn(getOnboardingFunnel);
+  const fetchRetention = useServerFn(getOnboardingRetention);
   const [signupMethod, setSignupMethod] = useState<string>("");
   const [device, setDevice] = useState<string>("");
+  const filterArgs = {
+    ...(signupMethod ? { signupMethod } : {}),
+    ...(device ? { device } : {}),
+  };
   const { data, isLoading } = useQuery({
     queryKey: ["onboarding-funnel", signupMethod, device],
-    queryFn: () =>
-      fetchFunnel({
-        data: {
-          ...(signupMethod ? { signupMethod } : {}),
-          ...(device ? { device } : {}),
-        },
-      }),
+    queryFn: () => fetchFunnel({ data: filterArgs }),
+    staleTime: 30_000,
+  });
+  const retention = useQuery({
+    queryKey: ["onboarding-retention", signupMethod, device],
+    queryFn: () => fetchRetention({ data: filterArgs }),
     staleTime: 30_000,
   });
   const [drillStage, setDrillStage] = useState<string | null>(null);
@@ -41,7 +60,6 @@ export function OnboardingAnalyticsScreen() {
 
   const exportCsv = () => {
     if (!data) return;
-    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const lines: string[] = [];
     lines.push("section,key,label,metric,value");
     Object.entries(data.totals).forEach(([k, v]) =>
@@ -55,6 +73,9 @@ export function OnboardingAnalyticsScreen() {
     data.resumePoints.forEach((r) =>
       lines.push(["resumePoints", r.key, r.label, "count", r.count].map(esc).join(",")),
     );
+    (["attempts", "failures", "fallbacks", "failureRate", "verifyFailures", "blocked", "phoneChanges"] as const).forEach(
+      (m) => lines.push(["sms", m, m, "count", data.sms[m]].map(esc).join(",")),
+    );
     lines.push("");
     lines.push("section,at,eventType,stageKey,signupMethod,device");
     data.timeline.forEach((e) =>
@@ -62,14 +83,23 @@ export function OnboardingAnalyticsScreen() {
         ["events", e.at, e.eventType, e.stageKey ?? "", e.signupMethod, e.device].map(esc).join(","),
       ),
     );
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `circle-onboarding-funnel-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv("circle-onboarding-funnel", lines);
   };
+
+  /** Exports every underlying event row for the active filters, for auditing. */
+  const exportEventRows = () => {
+    if (!data) return;
+    const lines = ["at,eventType,stageKey,stageIndex,sessionId,signupMethod,device"];
+    data.eventRows.forEach((e) =>
+      lines.push(
+        [e.at, e.eventType, e.stageKey ?? "", e.stageIndex ?? "", e.sessionId ?? "", e.signupMethod, e.device]
+          .map(esc)
+          .join(","),
+      ),
+    );
+    downloadCsv("circle-onboarding-events", lines);
+  };
+
 
   return (
     <div className="min-h-screen bg-paper pb-10 pt-safe-top">
@@ -85,8 +115,16 @@ export function OnboardingAnalyticsScreen() {
           disabled={!data}
           className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-ink disabled:opacity-50"
         >
-          <Download size={14} /> CSV
+          <Download size={14} /> Summary
         </button>
+        <button
+          onClick={exportEventRows}
+          disabled={!data}
+          className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-ink disabled:opacity-50"
+        >
+          <Download size={14} /> Rows
+        </button>
+
       </header>
 
       <section className="flex flex-wrap gap-2 px-4 pt-4">
@@ -204,7 +242,73 @@ export function OnboardingAnalyticsScreen() {
                 ))}
             </ul>
           </section>
+
+          <section className="px-4 pt-7">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              SMS delivery health
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Metric label="SMS attempts" value={data.sms.attempts} />
+              <Metric label="Failure rate %" value={data.sms.failureRate} />
+              <Metric label="In-app fallbacks" value={data.sms.fallbacks} />
+              <Metric label="Wrong codes" value={data.sms.verifyFailures} />
+            </div>
+            {data.sms.trend.length > 0 && (
+              <div className="mt-3 h-44 rounded-2xl border border-border bg-parchment p-3">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.sms.trend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="day" tick={{ fontSize: 9 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 10 }} width={24} />
+                    <Tooltip />
+                    <Bar dataKey="attempts" name="Attempts" fill="#B8B2A4" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="failures" name="Failures" fill="#E83227" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              {data.sms.blocked} attempt-limit blocks · {data.sms.phoneChanges} phone changes.
+            </p>
+          </section>
+
+          <section className="px-4 pt-7">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Retention after onboarding
+            </p>
+            {retention.isLoading ? (
+              <p className="mt-3 text-sm text-muted-foreground">Loading cohorts…</p>
+            ) : (retention.data?.summary.total ?? 0) === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                No completed onboarding cohorts match these filters yet.
+              </p>
+            ) : (
+              <>
+                <div className="mt-3 grid grid-cols-3 gap-3">
+                  <Metric label="Cohorts" value={retention.data!.summary.total} />
+                  <Metric label="Day 1 active" value={retention.data!.summary.day1} />
+                  <Metric label="Day 7 active" value={retention.data!.summary.day7} />
+                </div>
+                <ul className="mt-3 space-y-1.5">
+                  {retention.data!.cohorts.map((c) => (
+                    <li
+                      key={c.completedAt}
+                      className="flex items-center justify-between rounded-xl border border-border bg-parchment px-4 py-2.5 text-sm text-ink"
+                    >
+                      <span>
+                        {new Date(c.completedAt).toLocaleDateString()} · {c.signupMethod} · {c.device}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        D1 {c.day1 ? "✓" : "—"} · D7 {c.day7 ? "✓" : "—"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </section>
         </>
+
       )}
     </div>
   );
