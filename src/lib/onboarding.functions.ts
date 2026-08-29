@@ -5,6 +5,7 @@ import { derivePersonality, scoreTraits, type ReaderAnswers } from "@/lib/reader
 export const getOnboardingState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { readOwnProfile: readOwnProfileServer } = await import("@/lib/profile.server");
     const { supabase, userId, claims } = context;
 
     const meta = (claims['user_metadata'] ?? {}) as Record<string, unknown>;
@@ -251,6 +252,7 @@ export const connectGoodreads = createServerFn({ method: "POST" })
 export const syncGoodreads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { readOwnProfile: readOwnProfileServer } = await import("@/lib/profile.server");
     const { supabase, userId } = context;
     const { extractGoodreadsUserId, fetchGoodreadsSummary } = await import("@/lib/goodreads.server");
 

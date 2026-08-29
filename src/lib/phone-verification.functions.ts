@@ -28,6 +28,7 @@ async function hashCode(code: string, salt: string): Promise<string> {
 export const getPhoneOtpStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { readOwnProfile: readOwnProfileServer } = await import("@/lib/profile.server");
     const { supabase, userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { isSmsConfigured } = await import("@/lib/sms.server");
