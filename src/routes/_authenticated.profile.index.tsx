@@ -3,9 +3,13 @@ import { ProfileScreen, PROFILE_TAB_IDS, type ProfileTabId } from "@/components/
 
 export const Route = createFileRoute("/_authenticated/profile/")({
   component: ProfileRoute,
-  validateSearch: (search: Record<string, unknown>): { tab?: ProfileTabId } => {
+  validateSearch: (search: Record<string, unknown>): { tab?: ProfileTabId; s?: number } => {
     const tab = String(search["tab"] ?? "");
-    return PROFILE_TAB_IDS.includes(tab as ProfileTabId) ? { tab: tab as ProfileTabId } : {};
+    const s = Number(search["s"]);
+    return {
+      ...(PROFILE_TAB_IDS.includes(tab as ProfileTabId) ? { tab: tab as ProfileTabId } : {}),
+      ...(Number.isFinite(s) && s > 0 ? { s: Math.min(Math.round(s), 100000) } : {}),
+    };
   },
   head: () => ({
     meta: [
@@ -13,11 +17,13 @@ export const Route = createFileRoute("/_authenticated/profile/")({
       { name: "description", content: "Your reader identity and reading dashboard." },
       { property: "og:title", content: "Profile — Circle" },
       { property: "og:description", content: "Your reader identity and reading dashboard." },
+      { property: "og:type", content: "profile" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });
 
 function ProfileRoute() {
-  const { tab } = Route.useSearch();
-  return <ProfileScreen initialTab={tab} />;
+  const { tab, s } = Route.useSearch();
+  return <ProfileScreen initialTab={tab} initialScroll={s} />;
 }
