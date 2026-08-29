@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getConversation, markConversationRead, sendMessage } from "@/lib/social.functions";
+import { getConversation, getNotificationPreferences, markConversationRead, sendMessage } from "@/lib/social.functions";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 
@@ -30,6 +30,13 @@ export function ConversationView({
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
+  const fetchPrefs = useServerFn(getNotificationPreferences);
+  const { data: prefs } = useQuery({ queryKey: ["notification-preferences"], queryFn: () => fetchPrefs(), staleTime: 60_000 });
+  const seenMode = ((prefs as { seen_indicator_mode?: string } | null | undefined)?.seen_indicator_mode ?? "full") as
+    | "full"
+    | "initials"
+    | "hidden";
+
   const { data, isLoading } = useQuery({
     queryKey: ["conversation", conversationId],
     queryFn: () => fetchConversation({ data: { conversationId } }),
@@ -48,10 +55,12 @@ export function ConversationView({
 
   useEffect(() => {
     if (!data) return;
+    // "Hidden" keeps read receipts private: we never publish a read marker.
+    if (seenMode === "hidden") return;
     markRead({ data: { conversationId } })
       .then(() => queryClient.invalidateQueries({ queryKey: ["conversations"] }))
       .catch(() => undefined);
-  }, [data, conversationId, markRead, queryClient]);
+  }, [data, conversationId, markRead, queryClient, seenMode]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -106,16 +115,28 @@ export function ConversationView({
                 <p className="whitespace-pre-wrap">{msg.content}</p>
                 <div className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                   <span>{timeLabel(msg.created_at)}</span>
-                  {isMe && (
+                  {isMe && seenMode !== "hidden" && (
                     msg.seenCount > 0 ? (
                       <span className="flex items-center gap-0.5" title={`Seen by ${msg.seenBy.map((s) => s?.display_name ?? s?.username).join(", ")}`}>
                         <CheckCheck size={13} />
-                        {isGroup ? <span>Seen {msg.seenCount}</span> : <span>Seen</span>}
+                        {seenMode === "initials" ? (
+                          <span>
+                            {msg.seenBy
+                              .map((s) => (s?.display_name ?? s?.username ?? "R").slice(0, 1).toUpperCase())
+                              .slice(0, 3)
+                              .join("")}
+                          </span>
+                        ) : isGroup ? (
+                          <span>Seen {msg.seenCount}</span>
+                        ) : (
+                          <span>Seen</span>
+                        )}
                       </span>
                     ) : (
                       <Check size={13} aria-label="Sent" />
                     )
                   )}
+                  {isMe && seenMode === "hidden" && <Check size={13} aria-label="Sent" />}
                 </div>
               </div>
             </div>

@@ -17,6 +17,7 @@ import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AuthenticatedBooksRouteImport } from './routes/_authenticated.books'
 import { Route as AuthenticatedClubsRouteImport } from './routes/_authenticated/clubs'
 import { Route as AuthenticatedCreatePostRouteImport } from './routes/_authenticated.create-post'
+import { Route as AuthenticatedDiagnosticsRouteImport } from './routes/_authenticated.diagnostics'
 import { Route as AuthenticatedDiscoverRouteImport } from './routes/_authenticated/discover'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated.messages'
@@ -80,6 +81,12 @@ const AuthenticatedCreatePostRoute = AuthenticatedCreatePostRouteImport.update({
   path: '/create-post',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDiagnosticsRoute =
+  AuthenticatedDiagnosticsRouteImport.update({
+    id: '/diagnostics',
+    path: '/diagnostics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDiscoverRoute = AuthenticatedDiscoverRouteImport.update({
   id: '/discover',
   path: '/discover',
@@ -213,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/books': typeof AuthenticatedBooksRouteWithChildren
   '/clubs': typeof AuthenticatedClubsRouteWithChildren
   '/create-post': typeof AuthenticatedCreatePostRoute
+  '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/discover': typeof AuthenticatedDiscoverRoute
   '/home': typeof AuthenticatedHomeRoute
   '/messages': typeof AuthenticatedMessagesRouteWithChildren
@@ -244,6 +252,7 @@ export interface FileRoutesByTo {
   '/books': typeof AuthenticatedBooksRouteWithChildren
   '/clubs': typeof AuthenticatedClubsRouteWithChildren
   '/create-post': typeof AuthenticatedCreatePostRoute
+  '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/discover': typeof AuthenticatedDiscoverRoute
   '/home': typeof AuthenticatedHomeRoute
   '/messages': typeof AuthenticatedMessagesRouteWithChildren
@@ -278,6 +287,7 @@ export interface FileRoutesById {
   '/_authenticated/books': typeof AuthenticatedBooksRouteWithChildren
   '/_authenticated/clubs': typeof AuthenticatedClubsRouteWithChildren
   '/_authenticated/create-post': typeof AuthenticatedCreatePostRoute
+  '/_authenticated/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/_authenticated/discover': typeof AuthenticatedDiscoverRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRouteWithChildren
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
     | '/books'
     | '/clubs'
     | '/create-post'
+    | '/diagnostics'
     | '/discover'
     | '/home'
     | '/messages'
@@ -343,6 +354,7 @@ export interface FileRouteTypes {
     | '/books'
     | '/clubs'
     | '/create-post'
+    | '/diagnostics'
     | '/discover'
     | '/home'
     | '/messages'
@@ -376,6 +388,7 @@ export interface FileRouteTypes {
     | '/_authenticated/books'
     | '/_authenticated/clubs'
     | '/_authenticated/create-post'
+    | '/_authenticated/diagnostics'
     | '/_authenticated/discover'
     | '/_authenticated/home'
     | '/_authenticated/messages'
@@ -466,6 +479,13 @@ declare module '@tanstack/react-router' {
       path: '/create-post'
       fullPath: '/create-post'
       preLoaderRoute: typeof AuthenticatedCreatePostRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/diagnostics': {
+      id: '/_authenticated/diagnostics'
+      path: '/diagnostics'
+      fullPath: '/diagnostics'
+      preLoaderRoute: typeof AuthenticatedDiagnosticsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/discover': {
@@ -682,6 +702,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBooksRoute: typeof AuthenticatedBooksRouteWithChildren
   AuthenticatedClubsRoute: typeof AuthenticatedClubsRouteWithChildren
   AuthenticatedCreatePostRoute: typeof AuthenticatedCreatePostRoute
+  AuthenticatedDiagnosticsRoute: typeof AuthenticatedDiagnosticsRoute
   AuthenticatedDiscoverRoute: typeof AuthenticatedDiscoverRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRouteWithChildren
@@ -704,6 +725,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBooksRoute: AuthenticatedBooksRouteWithChildren,
   AuthenticatedClubsRoute: AuthenticatedClubsRouteWithChildren,
   AuthenticatedCreatePostRoute: AuthenticatedCreatePostRoute,
+  AuthenticatedDiagnosticsRoute: AuthenticatedDiagnosticsRoute,
   AuthenticatedDiscoverRoute: AuthenticatedDiscoverRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRouteWithChildren,

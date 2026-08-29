@@ -400,6 +400,8 @@ export type Database = {
           id: string
           likes: boolean
           mentions: boolean
+          push_enabled: boolean
+          seen_indicator_mode: string
           updated_at: string
           user_id: string
         }
@@ -414,6 +416,8 @@ export type Database = {
           id?: string
           likes?: boolean
           mentions?: boolean
+          push_enabled?: boolean
+          seen_indicator_mode?: string
           updated_at?: string
           user_id: string
         }
@@ -428,6 +432,8 @@ export type Database = {
           id?: string
           likes?: boolean
           mentions?: boolean
+          push_enabled?: boolean
+          seen_indicator_mode?: string
           updated_at?: string
           user_id?: string
         }
@@ -702,6 +708,36 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth_key: string | null
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth_key?: string | null
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth_key?: string | null
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       reader_profiles: {
         Row: {
           community_motivations: string[]
@@ -752,6 +788,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      recommendation_dismissals: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_dismissals_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       search_events: {
         Row: {
@@ -869,6 +937,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      timeline_presets: {
+        Row: {
+          club_id: string | null
+          created_at: string
+          id: string
+          name: string
+          range: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          club_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          range?: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          club_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          range?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_presets_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_books: {
         Row: {

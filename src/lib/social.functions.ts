@@ -8,12 +8,14 @@ export const getRecommendations = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
 
-    const [{ data: profile }, { data: shelf }, { data: following }, { data: myClubs }] = await Promise.all([
+    const [{ data: profile }, { data: shelf }, { data: following }, { data: myClubs }, { data: dismissed }] = await Promise.all([
       supabase.from("profiles").select("favorite_genres").eq("user_id", userId).maybeSingle(),
       supabase.from("user_books").select("book_id, status, rating").eq("user_id", userId),
       supabase.from("follows").select("following_id").eq("follower_id", userId),
       supabase.from("club_memberships").select("club_id").eq("user_id", userId),
+      supabase.from("recommendation_dismissals").select("book_id").eq("user_id", userId),
     ]);
+    const dismissedIds = new Set((dismissed ?? []).map((d) => d.book_id));
 
     const genres = (profile?.favorite_genres ?? []) as string[];
     const shelfIds = new Set((shelf ?? []).map((s) => s.book_id));
@@ -48,7 +50,7 @@ export const getRecommendations = createServerFn({ method: "GET" })
     }
 
     const scored = (books ?? [])
-      .filter((b) => !shelfIds.has(b.id))
+      .filter((b) => !shelfIds.has(b.id) && !dismissedIds.has(b.id))
       .map((b) => {
         const reasons: string[] = [];
         let score = Number(b.rating ?? 0) * 0.4;
@@ -236,7 +238,7 @@ export const getConversations = createServerFn({ method: "GET" })
         kind: c.kind,
         title: c.title,
         club: c.clubs,
-        lastMessage: last ? { content: last.content, createdAt: last.created_at, mine: last.sender_id === userId } : null,
+        lastMessage: last ? { id: last.id, content: last.content, createdAt: last.created_at, mine: last.sender_id === userId } : null,
         lastMessageAt: c.last_message_at,
         unread,
         others,
@@ -425,10 +427,15 @@ export const getNotificationPreferences = createServerFn({ method: "GET" })
 
 export const updateNotificationPreferences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: Partial<Record<PrefKey, boolean>>) => {
-    const patch: Partial<Record<PrefKey, boolean>> = {};
+  .inputValidator((input: Partial<Record<PrefKey, boolean>> & { push_enabled?: boolean; seen_indicator_mode?: string }) => {
+    const patch: Record<string, boolean | string> = {};
     for (const key of PREF_KEYS) {
-      if (typeof input[key] === "boolean") patch[key] = input[key];
+      if (typeof input[key] === "boolean") patch[key] = input[key] as boolean;
+    }
+    if (typeof input.push_enabled === "boolean") patch["push_enabled"] = input.push_enabled;
+    if (typeof input.seen_indicator_mode === "string") {
+      if (!["full", "initials", "hidden"].includes(input.seen_indicator_mode)) throw new Error("Invalid seen indicator mode");
+      patch["seen_indicator_mode"] = input.seen_indicator_mode;
     }
     if (!Object.keys(patch).length) throw new Error("Nothing to update");
     return patch;
@@ -494,4 +501,102 @@ export const getMyClubsForFilter = createServerFn({ method: "GET" })
       .select("club_id, clubs(id, name)")
       .eq("user_id", userId);
     return (data ?? []).map((m) => m.clubs).filter((c): c is { id: string; name: string } => !!c);
+  });
+
+/* ----------------------------- timeline presets --------------------------- */
+
+export const getTimelinePresets = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data } = await supabase
+      .from("timeline_presets")
+      .select("id, name, type, range, club_id")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+    return data ?? [];
+  });
+
+export const saveTimelinePreset = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { name: string; type: string; range: string; clubId?: string | null }) => {
+    const name = input.name.trim();
+    if (!name) throw new Error("Give this view a name");
+    if (name.length > 40) throw new Error("Keep the name under 40 characters");
+    return { ...input, name };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: row, error } = await supabase
+      .from("timeline_presets")
+      .insert({ user_id: userId, name: data.name, type: data.type, range: data.range, club_id: data.clubId ?? null })
+      .select("id, name, type, range, club_id")
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const deleteTimelinePreset = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase.from("timeline_presets").delete().eq("id", data.id).eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ------------------------ recommendation dismissals ----------------------- */
+
+export const dismissRecommendation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookId: string; reason?: string | null }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("recommendation_dismissals")
+      .upsert({ user_id: userId, book_id: data.bookId, reason: data.reason ?? null }, { onConflict: "user_id,book_id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const undoRecommendationDismissal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await supabase.from("recommendation_dismissals").delete().eq("user_id", userId).eq("book_id", data.bookId);
+    return { ok: true };
+  });
+
+/* ---------------------------- push subscriptions -------------------------- */
+
+export const savePushSubscription = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { endpoint: string; p256dh?: string | null; auth?: string | null; userAgent?: string | null }) => {
+    if (!input.endpoint) throw new Error("Missing push endpoint");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase.from("push_subscriptions").upsert(
+      {
+        user_id: userId,
+        endpoint: data.endpoint,
+        p256dh: data.p256dh ?? null,
+        auth_key: data.auth ?? null,
+        user_agent: data.userAgent ?? null,
+      },
+      { onConflict: "user_id,endpoint" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const removePushSubscriptions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    await supabase.from("push_subscriptions").delete().eq("user_id", userId);
+    return { ok: true };
   });
