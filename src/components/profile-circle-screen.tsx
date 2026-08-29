@@ -165,52 +165,88 @@ export function ProfileCircleScreen({
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["circle-page"] }),
   });
 
-  async function shareCircle() {
+  const pages = data?.pages ?? [];
+  const list = useMemo(() => pages.flatMap((p) => p.items), [pages]);
+  const counts = pages[0]?.counts ?? { followers: 0, following: 0 };
+  const matchCount = pages[0]?.matchCount ?? 0;
+  const firstMatchIndex = debounced && list.length ? 0 : -1;
+  const firstMatchId = firstMatchIndex >= 0 ? list[0]?.user_id ?? null : null;
+
+  /* ------------------------------ list virtualization ----------------------------- */
+  const virtualizer = useVirtualizer({
+    count: list.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 88,
+    overscan: 8,
+    getItemKey: (index) => list[index]?.user_id ?? index,
+  });
+  const virtualItems = virtualizer.getVirtualItems();
+
+  /* --------------------------------- share preview -------------------------------- */
+  const shareUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
     const params = new URLSearchParams({
       tab,
       ...(debounced ? { q: debounced } : {}),
       ...(sort !== "alphabetical" ? { sort } : {}),
       ...(filter !== "all" ? { filter } : {}),
+      ...(matchCount ? { n: String(matchCount) } : {}),
       ...(scrollOffset.current > 0 ? { s: String(Math.round(scrollOffset.current)) } : {}),
     });
-    const url = `${window.location.origin}/profile/circle?${params.toString()}`;
+    return `${window.location.origin}/profile/circle?${params.toString()}`;
+  }, [tab, debounced, sort, filter, matchCount, shareOpen]);
+
+  const previewTitle = `My ${tab} on Circle`;
+  const previewDescription = debounced
+    ? `${matchCount} ${matchCount === 1 ? "match" : "matches"} for “${debounced}” in my ${tab}.`
+    : `${tab === "followers" ? counts.followers : counts.following} readers in my ${tab} on Circle.`;
+
+  async function shareCircle() {
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({ title: "My circle on Circle", url });
+        await navigator.share({ title: previewTitle, text: previewDescription, url: shareUrl });
         toast.success("Link shared");
+        setShareOpen(false);
         return;
       }
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied — it opens right where you left off");
+      await copyShareLink();
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return;
       toast.error("Couldn't share this link");
     }
   }
 
-  const pages = data?.pages ?? [];
-  const list = pages.flatMap((p) => p.items);
-  const counts = pages[0]?.counts ?? { followers: 0, following: 0 };
-  const matchCount = pages[0]?.matchCount ?? 0;
-  const firstMatchId = debounced ? list[0]?.user_id ?? null : null;
+  async function copyShareLink() {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied — it opens right where you left off");
+      setShareOpen(false);
+    } catch {
+      toast.error("Couldn't copy this link");
+    }
+  }
 
   // Restore an exact scroll offset shared through the link.
   useLayoutEffect(() => {
     if (restored.current || isLoading || !list.length) return;
     const node = scrollRef.current;
     if (!node) return;
-    if (initialScroll && initialScroll > 0) node.scrollTop = initialScroll;
+    if (initialScroll && initialScroll > 0) {
+      virtualizer.scrollToOffset(initialScroll, { align: "start" });
+      node.scrollTop = initialScroll;
+    }
     restored.current = true;
-  }, [isLoading, list.length, initialScroll]);
+  }, [isLoading, list.length, initialScroll, virtualizer]);
 
   // Bring the first highlighted match into view when the search changes.
   useEffect(() => {
-    if (!debounced || !firstMatchId) return;
+    if (!debounced || !firstMatchId || firstMatchIndex < 0) return;
     const key = `${tab}:${debounced}:${firstMatchId}`;
     if (lastAutoScrolled.current === key) return;
     lastAutoScrolled.current = key;
-    firstMatchRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [debounced, firstMatchId, tab]);
+    virtualizer.scrollToIndex(firstMatchIndex, { align: "center", behavior: "smooth" });
+  }, [debounced, firstMatchId, firstMatchIndex, tab, virtualizer]);
+
 
   // infinite scroll
   useEffect(() => {
