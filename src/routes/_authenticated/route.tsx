@@ -80,7 +80,9 @@ function AuthenticatedLayout() {
 function SignInRedirect() {
   const navigate = useNavigate();
   useEffect(() => {
-    navigate({ to: "/auth", replace: true });
+    // Defer a tick so the redirect never runs while this tree is still mounting.
+    const t = setTimeout(() => navigate({ to: "/auth", replace: true }), 0);
+    return () => clearTimeout(t);
   }, [navigate]);
 
   return (
