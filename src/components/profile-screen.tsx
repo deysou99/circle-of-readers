@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Settings, Share2, Users, Pencil, BarChart3, Star, MessageSquareText, Heart, BookOpen } from "lucide-react";
+import { Settings, Share2, Users, Pencil, BarChart3, Star, MessageSquareText, Heart, BookOpen, Link2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -18,6 +18,7 @@ const TABS = [
   { id: "clubs", label: "Clubs", icon: Users },
   { id: "posts", label: "Posts", icon: MessageSquareText },
   { id: "likes", label: "Likes", icon: Heart },
+  { id: "goodreads", label: "Goodreads", icon: Link2 },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -155,20 +156,17 @@ export function ProfileScreen() {
           {tab === "clubs" && <ClubsTab clubs={myClubs} />}
           {tab === "posts" && <PostsTab />}
           {tab === "likes" && <LikesTab />}
+          {tab === "goodreads" && (
+            <GoodreadsPanel
+              value={goodreadsState}
+              invalidateKeys={[["my-profile"]]}
+              title="Goodreads connection"
+              subtitle="Keep your Circle reader profile in step with your Goodreads shelves."
+            />
+          )}
         </div>
       </section>
 
-      <section className="px-4 pt-8">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Goodreads</p>
-        <div className="mt-3">
-          <GoodreadsPanel
-            value={goodreadsState}
-            invalidateKeys={[["my-profile"]]}
-            title="Goodreads connection"
-            subtitle="Keep your Circle reader profile in step with your Goodreads shelves."
-          />
-        </div>
-      </section>
     </div>
   );
 }
