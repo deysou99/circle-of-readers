@@ -165,6 +165,11 @@ export const getFeed = createServerFn({ method: "GET" })
     ]);
 
     const authorMap = new Map((authors ?? []).map((a) => [a.user_id, a]));
+    const followsYouSet = new Set((followsBack ?? []).map((f) => f.follower_id));
+    const activePeopleSet = new Set((activePeople ?? []).map((p) => p.user_id));
+    const activeClubSet = new Set((activeClubs ?? []).map((p) => p.club_id).filter((c): c is string => Boolean(c)));
+    const boostedPeopleSet = new Set(boostPeople.map((p) => p.user_id));
+    const boostedClubSet = new Set(boostClubs.map((c) => c.id));
     const likedIds = new Set((likes ?? []).map((l) => l.post_id));
 
     return list.map((p) => ({
@@ -559,10 +564,12 @@ function nextKey(rows: Array<{ id: string; created_at: string }> | null | undefi
 
 export const searchCircle = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { query: string; type?: string; cursor?: string | null }) => ({
+  .inputValidator((input: { query: string; type?: string; cursor?: string | null; clubId?: string | null }) => ({
     query: (input.query ?? "").trim().slice(0, 100),
     type: (SEARCH_TYPES.includes((input.type ?? "All") as SearchType) ? input.type : "All") as SearchType,
     cursor: typeof input.cursor === "string" ? input.cursor.slice(0, 4000) : null,
+    // When set, the search is scoped to one circle: its members, its books and its posts.
+    clubId: typeof input.clubId === "string" && input.clubId ? input.clubId.slice(0, 64) : null,
   }))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -571,7 +578,8 @@ export const searchCircle = createServerFn({ method: "GET" })
     const type = data.type;
     const cursor = parseCursor(data.cursor);
     const firstPage = cursor.page === 0;
-    const want = (t: SearchType) => type === "All" || type === t;
+    const clubScope = data.clubId;
+    const want = (t: SearchType) => (clubScope && t === "Circles" ? false : type === "All" || type === t);
 
     const emptyRows = <T,>() => Promise.resolve({ data: [] as T[] });
 
@@ -579,11 +587,38 @@ export const searchCircle = createServerFn({ method: "GET" })
     const postSelect =
       "id, created_at, content, user_id, likes_count, comments_count, image_url, books(id, title, author, cover_url), clubs(id, name)";
 
+    /* ------- results the reader chose to hide never come back in search ------- */
+    const { data: hiddenRows } = await supabase
+      .from("search_hidden")
+      .select("target_type, target_id")
+      .eq("user_id", userId)
+      .limit(500);
+    const hiddenPeople = (hiddenRows ?? []).filter((h) => h.target_type === "person").map((h) => h.target_id);
+    const hiddenClubs = (hiddenRows ?? []).filter((h) => h.target_type === "circle").map((h) => h.target_id);
+
+    /* ------------------------- circle-scoped search prep ------------------------ */
+    let scopeMemberIds: string[] = [];
+    let scopeBookIds: string[] = [];
+    if (clubScope) {
+      const [{ data: members }, { data: clubPosts }, { data: clubRow }] = await Promise.all([
+        supabase.from("club_memberships").select("user_id").eq("club_id", clubScope).limit(500),
+        supabase.from("posts").select("book_id").eq("club_id", clubScope).not("book_id", "is", null).limit(200),
+        supabase.from("clubs").select("active_book_id").eq("id", clubScope).maybeSingle(),
+      ]);
+      scopeMemberIds = (members ?? []).map((m) => m.user_id);
+      scopeBookIds = [
+        ...new Set([
+          ...(clubPosts ?? []).map((p) => p.book_id).filter((b): b is string => Boolean(b)),
+          ...(clubRow?.active_book_id ? [clubRow.active_book_id] : []),
+        ]),
+      ];
+    }
+
     /* ---- relevance boost: followed readers and joined circles come first ---- */
     let boostPeople: PersonRow[] = [];
     let boostClubs: ClubRow[] = [];
 
-    if (firstPage) {
+    if (firstPage && !clubScope) {
       const [{ data: myFollows }, { data: myClubs }] = await Promise.all([
         want("People")
           ? supabase.from("follows").select("following_id").eq("follower_id", userId).limit(200)
@@ -618,24 +653,29 @@ export const searchCircle = createServerFn({ method: "GET" })
     const excludedClubs = firstPage ? boostClubs.map((c) => c.id) : cursor.boostedClubs;
 
     /* ------------------------- keyset-paginated sections ------------------------ */
-    const booksBase = q
+    let booksBase = q
       ? supabase.from("books").select("*").or(`title.ilike.${like},author.ilike.${like}`)
       : supabase.from("books").select("*");
+    if (clubScope) booksBase = booksBase.in("id", scopeBookIds.length ? scopeBookIds : ["00000000-0000-0000-0000-000000000000"]);
 
     let clubsBase = q
       ? supabase.from("clubs").select("*").or(`name.ilike.${like},category.ilike.${like},description.ilike.${like}`)
       : supabase.from("clubs").select("*");
-    if (excludedClubs.length) clubsBase = clubsBase.not("id", "in", `(${excludedClubs.join(",")})`);
+    const skipClubIds = [...new Set([...excludedClubs, ...hiddenClubs])];
+    if (skipClubIds.length) clubsBase = clubsBase.not("id", "in", `(${skipClubIds.join(",")})`);
 
     let peopleBase = q
       ? supabase.from("profiles").select(peopleSelect).or(`username.ilike.${like},display_name.ilike.${like}`)
       : supabase.from("profiles").select(peopleSelect);
     peopleBase = peopleBase.neq("user_id", userId);
-    if (excludedPeople.length) peopleBase = peopleBase.not("user_id", "in", `(${excludedPeople.join(",")})`);
+    if (clubScope) peopleBase = peopleBase.in("user_id", scopeMemberIds.length ? scopeMemberIds : ["00000000-0000-0000-0000-000000000000"]);
+    const skipPeopleIds = [...new Set([...excludedPeople, ...hiddenPeople])];
+    if (skipPeopleIds.length) peopleBase = peopleBase.not("user_id", "in", `(${skipPeopleIds.join(",")})`);
 
-    const postsBase = q
+    let postsBase = q
       ? supabase.from("posts").select(postSelect).ilike("content", like)
       : supabase.from("posts").select(postSelect);
+    if (clubScope) postsBase = postsBase.eq("club_id", clubScope);
 
     const [{ data: booksRaw }, { data: clubsRaw }, { data: peopleRaw }, { data: postsRaw }] = await Promise.all([
       want("Books") ? keyset(booksBase as never, cursor.books, PAGE_SIZE) : emptyRows<never>(),
@@ -659,7 +699,8 @@ export const searchCircle = createServerFn({ method: "GET" })
     const postList = postsPage.rows;
 
     const authorIds = [...new Set(postList.map((p) => p.user_id))];
-    const [{ data: follows }, { data: memberships }, { data: authors }] = await Promise.all([
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const [{ data: follows }, { data: memberships }, { data: authors }, { data: followsBack }, { data: activePeople }, { data: activeClubs }] = await Promise.all([
       peopleList.length
         ? supabase
             .from("follows")
@@ -677,6 +718,29 @@ export const searchCircle = createServerFn({ method: "GET" })
       authorIds.length
         ? supabase.from("profiles").select("user_id, username, display_name, avatar_url").in("user_id", authorIds)
         : emptyRows<{ user_id: string; username: string; display_name: string | null; avatar_url: string | null }>(),
+      // "Follows you" badge
+      peopleList.length
+        ? supabase
+            .from("follows")
+            .select("follower_id")
+            .eq("following_id", userId)
+            .in("follower_id", peopleList.map((p) => p.user_id))
+        : emptyRows<{ follower_id: string }>(),
+      // "Recently active" badge: posted in the last 7 days
+      peopleList.length
+        ? supabase
+            .from("posts")
+            .select("user_id")
+            .gte("created_at", since)
+            .in("user_id", peopleList.map((p) => p.user_id))
+        : emptyRows<{ user_id: string }>(),
+      clubList.length
+        ? supabase
+            .from("posts")
+            .select("club_id")
+            .gte("created_at", since)
+            .in("club_id", clubList.map((c) => c.id))
+        : emptyRows<{ club_id: string | null }>(),
     ]);
 
     const followingSet = new Set((follows ?? []).map((f) => f.following_id));
@@ -684,8 +748,23 @@ export const searchCircle = createServerFn({ method: "GET" })
     const authorMap = new Map((authors ?? []).map((a) => [a.user_id, a]));
 
     const books: BookRow[] = booksPage.rows;
-    const clubs = clubList.map((c) => ({ ...c, isMember: memberSet.has(c.id) }));
-    const people = peopleList.map((p) => ({ ...p, isFollowing: followingSet.has(p.user_id) }));
+    const clubs = clubList.map((c) => ({
+      ...c,
+      isMember: memberSet.has(c.id),
+      badges: [
+        ...(boostedClubSet.has(c.id) || memberSet.has(c.id) ? ["Your circle"] : []),
+        ...(activeClubSet.has(c.id) ? ["Active this week"] : []),
+      ],
+    }));
+    const people = peopleList.map((p) => ({
+      ...p,
+      isFollowing: followingSet.has(p.user_id),
+      badges: [
+        ...(boostedPeopleSet.has(p.user_id) || followingSet.has(p.user_id) ? ["You follow them"] : []),
+        ...(followsYouSet.has(p.user_id) ? ["Follows you"] : []),
+        ...(activePeopleSet.has(p.user_id) ? ["Recently active"] : []),
+      ],
+    }));
     const posts = postList.map((p) => ({ ...p, author: authorMap.get(p.user_id) ?? null }));
 
     const count = books.length + clubs.length + people.length + posts.length;
@@ -869,3 +948,117 @@ export const clearRecentSearches = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+
+
+/* ------------------------------ saved searches ------------------------------ */
+
+export const getSavedSearches = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data } = await supabase
+      .from("search_saved")
+      .select("id, name, query, filter, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    return data ?? [];
+  });
+
+export const saveSearch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { name?: string; query: string; filter?: string }) => {
+    const query = (input.query ?? "").trim().slice(0, 100);
+    if (query.length < 2) throw new Error("Type a search before saving it");
+    const filter = SEARCH_TYPES.includes((input.filter ?? "All") as SearchType) ? input.filter! : "All";
+    const name = ((input.name ?? "").trim() || (filter === "All" ? query : `${query} · ${filter}`)).slice(0, 60);
+    return { name, query, filter };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase.from("search_saved").insert({ user_id: userId, ...data });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteSavedSearch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string }) => ({ id: (input.id ?? "").slice(0, 64) }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await supabase.from("search_saved").delete().eq("id", data.id).eq("user_id", userId);
+    return { ok: true };
+  });
+
+/* --------------------------- hidden search results -------------------------- */
+
+export const getHiddenSearchResults = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data } = await supabase
+      .from("search_hidden")
+      .select("id, target_type, target_id, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    const rows = data ?? [];
+    const personIds = rows.filter((r) => r.target_type === "person").map((r) => r.target_id);
+    const clubIds = rows.filter((r) => r.target_type === "circle").map((r) => r.target_id);
+    const [{ data: people }, { data: clubs }] = await Promise.all([
+      personIds.length
+        ? supabase.from("profiles").select("user_id, username, display_name, avatar_url").in("user_id", personIds)
+        : Promise.resolve({ data: [] as { user_id: string; username: string; display_name: string | null; avatar_url: string | null }[] }),
+      clubIds.length
+        ? supabase.from("clubs").select("id, name, avatar_url").in("id", clubIds)
+        : Promise.resolve({ data: [] as { id: string; name: string; avatar_url: string | null }[] }),
+    ]);
+    const peopleMap = new Map((people ?? []).map((p) => [p.user_id, p]));
+    const clubMap = new Map((clubs ?? []).map((c) => [c.id, c]));
+    return rows.map((r) => ({
+      ...r,
+      label:
+        r.target_type === "person"
+          ? peopleMap.get(r.target_id)?.display_name ?? peopleMap.get(r.target_id)?.username ?? "Reader"
+          : clubMap.get(r.target_id)?.name ?? "Circle",
+      avatar_url:
+        r.target_type === "person" ? peopleMap.get(r.target_id)?.avatar_url ?? null : clubMap.get(r.target_id)?.avatar_url ?? null,
+    }));
+  });
+
+export const hideSearchResult = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { targetType: "person" | "circle"; targetId: string }) => {
+    const targetType = input.targetType === "circle" ? "circle" : "person";
+    const targetId = (input.targetId ?? "").slice(0, 64);
+    if (!targetId) throw new Error("Missing target");
+    return { targetType, targetId };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("search_hidden")
+      .upsert(
+        { user_id: userId, target_type: data.targetType, target_id: data.targetId },
+        { onConflict: "user_id,target_type,target_id" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const unhideSearchResult = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { targetType: "person" | "circle"; targetId: string }) => ({
+    targetType: input.targetType === "circle" ? "circle" : "person",
+    targetId: (input.targetId ?? "").slice(0, 64),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await supabase
+      .from("search_hidden")
+      .delete()
+      .eq("user_id", userId)
+      .eq("target_type", data.targetType)
+      .eq("target_id", data.targetId);
+    return { ok: true };
+  });
