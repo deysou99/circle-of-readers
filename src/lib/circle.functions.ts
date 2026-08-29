@@ -453,83 +453,186 @@ const SEARCH_TYPES: SearchType[] = ["All", "People", "Circles", "Books", "Posts"
 
 const PAGE_SIZE = 12;
 
+type Key = { c: string; id: string } | null;
+
+type SearchCursor = {
+  people: Key;
+  clubs: Key;
+  books: Key;
+  posts: Key;
+  /** Ids already served by the relevance-boosted first page, never repeated. */
+  boostedPeople: string[];
+  boostedClubs: string[];
+  page: number;
+};
+
+const emptyCursor = (): SearchCursor => ({
+  people: null,
+  clubs: null,
+  books: null,
+  posts: null,
+  boostedPeople: [],
+  boostedClubs: [],
+  page: 0,
+});
+
+function parseCursor(raw?: string | null): SearchCursor {
+  if (!raw) return emptyCursor();
+  try {
+    const parsed = JSON.parse(raw) as Partial<SearchCursor>;
+    return {
+      ...emptyCursor(),
+      ...parsed,
+      boostedPeople: (parsed.boostedPeople ?? []).slice(0, 200),
+      boostedClubs: (parsed.boostedClubs ?? []).slice(0, 200),
+      page: Math.max(0, Math.min(50, Math.floor(parsed.page ?? 0))),
+    };
+  } catch {
+    return emptyCursor();
+  }
+}
+
+/** Stable keyset ordering: created_at DESC, id DESC (both immutable). */
+function keyset<T extends { order: (c: string, o: { ascending: boolean }) => T; or: (f: string) => T; limit: (n: number) => T }>(
+  builder: T,
+  cursor: Key,
+  size: number,
+) {
+  let q = builder.order("created_at", { ascending: false }).order("id", { ascending: false });
+  if (cursor) q = q.or(`created_at.lt.${cursor.c},and(created_at.eq.${cursor.c},id.eq.${cursor.id})`);
+  return q.limit(size + 1);
+}
+
+function nextKey(rows: Array<{ id: string; created_at: string }> | null | undefined): Key {
+  const last = (rows ?? [])[(rows ?? []).length - 1];
+  return last ? { c: last.created_at, id: last.id } : null;
+}
+
 export const searchCircle = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { query: string; type?: string; page?: number }) => ({
+  .inputValidator((input: { query: string; type?: string; cursor?: string | null }) => ({
     query: (input.query ?? "").trim().slice(0, 100),
     type: (SEARCH_TYPES.includes((input.type ?? "All") as SearchType) ? input.type : "All") as SearchType,
-    page: Math.max(0, Math.min(50, Math.floor(input.page ?? 0))),
+    cursor: typeof input.cursor === "string" ? input.cursor.slice(0, 4000) : null,
   }))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const q = data.query;
     const like = `%${q}%`;
     const type = data.type;
-    const page = data.page;
+    const cursor = parseCursor(data.cursor);
+    const firstPage = cursor.page === 0;
     const want = (t: SearchType) => type === "All" || type === t;
-
-    // Fetch one extra row per section to know whether another page exists.
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE; // inclusive range -> PAGE_SIZE + 1 rows
 
     const emptyRows = <T,>() => Promise.resolve({ data: [] as T[] });
 
-    const booksP = want("Books")
-      ? q
-        ? supabase.from("books").select("*").or(`title.ilike.${like},author.ilike.${like}`).order("rating", { ascending: false }).range(from, to)
-        : supabase.from("books").select("*").order("rating", { ascending: false }).range(from, to)
-      : emptyRows<never>();
-
-    const clubsP = want("Circles")
-      ? q
-        ? supabase.from("clubs").select("*").or(`name.ilike.${like},category.ilike.${like},description.ilike.${like}`).order("member_count", { ascending: false }).range(from, to)
-        : supabase.from("clubs").select("*").order("member_count", { ascending: false }).range(from, to)
-      : emptyRows<never>();
-
-    const peopleP = want("People")
-      ? q
-        ? supabase
-            .from("profiles")
-            .select("user_id, username, display_name, avatar_url, bio")
-            .or(`username.ilike.${like},display_name.ilike.${like}`)
-            .order("created_at", { ascending: false })
-            .range(from, to)
-        : supabase
-            .from("profiles")
-            .select("user_id, username, display_name, avatar_url, bio")
-            .order("created_at", { ascending: false })
-            .range(from, to)
-      : emptyRows<never>();
-
+    const peopleSelect = "id, created_at, user_id, username, display_name, avatar_url, bio";
     const postSelect =
-      "id, content, created_at, user_id, likes_count, comments_count, image_url, books(id, title, author, cover_url), clubs(id, name)";
+      "id, created_at, content, user_id, likes_count, comments_count, image_url, books(id, title, author, cover_url), clubs(id, name)";
 
-    const postsP = want("Posts")
-      ? q
-        ? supabase.from("posts").select(postSelect).ilike("content", like).order("created_at", { ascending: false }).range(from, to)
-        : supabase.from("posts").select(postSelect).order("created_at", { ascending: false }).range(from, to)
-      : emptyRows<never>();
+    /* ---- relevance boost: followed readers and joined circles come first ---- */
+    let boostPeople: Array<Record<string, unknown>> = [];
+    let boostClubs: Array<Record<string, unknown>> = [];
+
+    if (firstPage) {
+      const [{ data: myFollows }, { data: myClubs }] = await Promise.all([
+        want("People")
+          ? supabase.from("follows").select("following_id").eq("follower_id", userId).limit(200)
+          : emptyRows<{ following_id: string }>(),
+        want("Circles")
+          ? supabase.from("club_memberships").select("club_id").eq("user_id", userId).limit(200)
+          : emptyRows<{ club_id: string }>(),
+      ]);
+
+      const followIds = (myFollows ?? []).map((f) => f.following_id).filter((id) => id !== userId);
+      const clubIds = (myClubs ?? []).map((m) => m.club_id);
+
+      const [{ data: bp }, { data: bc }] = await Promise.all([
+        followIds.length
+          ? (q
+              ? supabase.from("profiles").select(peopleSelect).in("user_id", followIds).or(`username.ilike.${like},display_name.ilike.${like}`)
+              : supabase.from("profiles").select(peopleSelect).in("user_id", followIds)
+            ).limit(PAGE_SIZE)
+          : emptyRows<Record<string, unknown>>(),
+        clubIds.length
+          ? (q
+              ? supabase.from("clubs").select("*").in("id", clubIds).or(`name.ilike.${like},category.ilike.${like},description.ilike.${like}`)
+              : supabase.from("clubs").select("*").in("id", clubIds)
+            ).limit(PAGE_SIZE)
+          : emptyRows<Record<string, unknown>>(),
+      ]);
+      boostPeople = (bp ?? []) as Array<Record<string, unknown>>;
+      boostClubs = (bc ?? []) as Array<Record<string, unknown>>;
+    }
+
+    const excludedPeople = firstPage ? boostPeople.map((p) => String(p.user_id)) : cursor.boostedPeople;
+    const excludedClubs = firstPage ? boostClubs.map((c) => String(c.id)) : cursor.boostedClubs;
+
+    /* ------------------------- keyset-paginated sections ------------------------ */
+    const booksBase = q
+      ? supabase.from("books").select("*").or(`title.ilike.${like},author.ilike.${like}`)
+      : supabase.from("books").select("*");
+
+    let clubsBase = q
+      ? supabase.from("clubs").select("*").or(`name.ilike.${like},category.ilike.${like},description.ilike.${like}`)
+      : supabase.from("clubs").select("*");
+    if (excludedClubs.length) clubsBase = clubsBase.not("id", "in", `(${excludedClubs.join(",")})`);
+
+    let peopleBase = q
+      ? supabase.from("profiles").select(peopleSelect).or(`username.ilike.${like},display_name.ilike.${like}`)
+      : supabase.from("profiles").select(peopleSelect);
+    peopleBase = peopleBase.neq("user_id", userId);
+    if (excludedPeople.length) peopleBase = peopleBase.not("user_id", "in", `(${excludedPeople.join(",")})`);
+
+    const postsBase = q
+      ? supabase.from("posts").select(postSelect).ilike("content", like)
+      : supabase.from("posts").select(postSelect);
 
     const [{ data: booksRaw }, { data: clubsRaw }, { data: peopleRaw }, { data: postsRaw }] = await Promise.all([
-      booksP,
-      clubsP,
-      peopleP,
-      postsP,
+      want("Books") ? keyset(booksBase as never, cursor.books, PAGE_SIZE) : emptyRows<never>(),
+      want("Circles") ? keyset(clubsBase as never, cursor.clubs, PAGE_SIZE) : emptyRows<never>(),
+      want("People") ? keyset(peopleBase as never, cursor.people, PAGE_SIZE) : emptyRows<never>(),
+      want("Posts") ? keyset(postsBase as never, cursor.posts, PAGE_SIZE) : emptyRows<never>(),
     ]);
 
     const trim = <T,>(rows: T[] | null) => {
-      const list = rows ?? [];
+      const list = (rows ?? []) as T[];
       return { rows: list.slice(0, PAGE_SIZE), hasMore: list.length > PAGE_SIZE };
     };
 
-    const booksPage = trim(booksRaw);
-    const clubsPage = trim(clubsRaw);
-    const peoplePage = trim(peopleRaw);
-    const postsPage = trim(postsRaw);
+    const booksPage = trim(booksRaw as Array<Record<string, unknown>> | null);
+    const clubsPage = trim(clubsRaw as Array<Record<string, unknown>> | null);
+    const peoplePage = trim(peopleRaw as Array<Record<string, unknown>> | null);
+    const postsPage = trim(postsRaw as Array<Record<string, unknown>> | null);
 
-    const peopleList = peoplePage.rows.filter((p) => p.user_id !== userId);
-    const postList = postsPage.rows;
-    const clubList = clubsPage.rows;
+    const peopleList = [...boostPeople, ...peoplePage.rows] as Array<{
+      id: string;
+      created_at: string;
+      user_id: string;
+      username: string;
+      display_name: string | null;
+      avatar_url: string | null;
+      bio: string | null;
+    }>;
+    const clubList = [...boostClubs, ...clubsPage.rows] as Array<{
+      id: string;
+      created_at: string;
+      name: string;
+      category: string | null;
+      avatar_url: string | null;
+      member_count: number | null;
+    }>;
+    const postList = postsPage.rows as Array<{
+      id: string;
+      created_at: string;
+      content: string;
+      user_id: string;
+      likes_count: number | null;
+      comments_count: number | null;
+      image_url: string | null;
+      books: { id: string; title: string; author: string; cover_url: string | null } | null;
+      clubs: { id: string; name: string } | null;
+    }>;
 
     const authorIds = [...new Set(postList.map((p) => p.user_id))];
     const [{ data: follows }, { data: memberships }, { data: authors }] = await Promise.all([
@@ -556,32 +659,125 @@ export const searchCircle = createServerFn({ method: "GET" })
     const memberSet = new Set((memberships ?? []).map((m) => m.club_id));
     const authorMap = new Map((authors ?? []).map((a) => [a.user_id, a]));
 
-    const books = booksPage.rows;
+    const books = booksPage.rows as Array<Record<string, unknown> & { id: string; created_at: string }>;
     const clubs = clubList.map((c) => ({ ...c, isMember: memberSet.has(c.id) }));
     const people = peopleList.map((p) => ({ ...p, isFollowing: followingSet.has(p.user_id) }));
     const posts = postList.map((p) => ({ ...p, author: authorMap.get(p.user_id) ?? null }));
 
     const count = books.length + clubs.length + people.length + posts.length;
+    const hasMore = booksPage.hasMore || clubsPage.hasMore || peoplePage.hasMore || postsPage.hasMore;
+
+    const nextCursor: SearchCursor = {
+      people: nextKey(peoplePage.rows as Array<{ id: string; created_at: string }>) ?? cursor.people,
+      clubs: nextKey(clubsPage.rows as Array<{ id: string; created_at: string }>) ?? cursor.clubs,
+      books: nextKey(booksPage.rows as Array<{ id: string; created_at: string }>) ?? cursor.books,
+      posts: nextKey(postsPage.rows as Array<{ id: string; created_at: string }>) ?? cursor.posts,
+      boostedPeople: excludedPeople,
+      boostedClubs: excludedClubs,
+      page: cursor.page + 1,
+    };
 
     // Engagement telemetry: one row per page of results served.
     await supabase.from("search_events").insert({
       user_id: userId,
       query: q,
       filter: type,
-      event_type: page === 0 ? "query" : "load_more",
+      event_type: firstPage ? "query" : "load_more",
       result_count: count,
-      position: page,
+      position: cursor.page,
     });
 
     return {
-      page,
+      page: cursor.page,
       books,
       clubs,
       people,
       posts,
       count,
-      hasMore: booksPage.hasMore || clubsPage.hasMore || peoplePage.hasMore || postsPage.hasMore,
+      hasMore,
+      nextCursor: hasMore ? JSON.stringify(nextCursor) : null,
     };
+  });
+
+/** Lightweight typeahead suggestions across readers, circles and books. */
+export const searchSuggestions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { query: string; type?: string }) => ({
+    query: (input.query ?? "").trim().slice(0, 60),
+    type: (SEARCH_TYPES.includes((input.type ?? "All") as SearchType) ? input.type : "All") as SearchType,
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const q = data.query;
+    if (q.length < 2) return { suggestions: [] as Array<{ id: string; label: string; sublabel: string | null; kind: string }> };
+    const like = `%${q}%`;
+    const type = data.type;
+    const want = (t: SearchType) => type === "All" || type === t;
+    const empty = <T,>() => Promise.resolve({ data: [] as T[] });
+
+    const [{ data: people }, { data: clubs }, { data: books }, { data: recents }] = await Promise.all([
+      want("People")
+        ? supabase
+            .from("profiles")
+            .select("user_id, username, display_name")
+            .neq("user_id", userId)
+            .or(`username.ilike.${like},display_name.ilike.${like}`)
+            .limit(4)
+        : empty<{ user_id: string; username: string; display_name: string | null }>(),
+      want("Circles")
+        ? supabase.from("clubs").select("id, name, category").ilike("name", like).limit(4)
+        : empty<{ id: string; name: string; category: string | null }>(),
+      want("Books")
+        ? supabase.from("books").select("id, title, author").or(`title.ilike.${like},author.ilike.${like}`).limit(4)
+        : empty<{ id: string; title: string; author: string }>(),
+      supabase.from("search_recents").select("id, query").eq("user_id", userId).ilike("query", like).limit(3),
+    ]);
+
+    const suggestions = [
+      ...(recents ?? []).map((r) => ({ id: `recent-${r.id}`, label: r.query, sublabel: null, kind: "recent" })),
+      ...(people ?? []).map((p) => ({
+        id: `person-${p.user_id}`,
+        label: p.display_name ?? p.username,
+        sublabel: `@${p.username}`,
+        kind: "person",
+      })),
+      ...(clubs ?? []).map((c) => ({ id: `club-${c.id}`, label: c.name, sublabel: c.category, kind: "circle" })),
+      ...(books ?? []).map((b) => ({ id: `book-${b.id}`, label: b.title, sublabel: b.author, kind: "book" })),
+    ];
+
+    const seen = new Set<string>();
+    return {
+      suggestions: suggestions.filter((s) => {
+        const key = s.label.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).slice(0, 8),
+    };
+  });
+
+/** Records dwell time and deepest scroll depth for a completed search session. */
+export const logSearchEngagement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { query: string; filter?: string; dwellMs: number; deepestPercent: number; resultsSeen?: number }) => ({
+    query: (input.query ?? "").trim().slice(0, 100),
+    filter: SEARCH_TYPES.includes((input.filter ?? "All") as SearchType) ? input.filter! : "All",
+    dwellMs: Math.max(0, Math.min(60 * 60 * 1000, Math.floor(input.dwellMs ?? 0))),
+    deepestPercent: Math.max(0, Math.min(100, Math.floor(input.deepestPercent ?? 0))),
+    resultsSeen: Math.max(0, Math.min(10000, Math.floor(input.resultsSeen ?? 0))),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await supabase.from("search_events").insert({
+      user_id: userId,
+      query: data.query,
+      filter: data.filter,
+      event_type: "engagement",
+      result_type: `dwell_ms:${data.dwellMs}`,
+      result_count: data.resultsSeen,
+      position: data.deepestPercent,
+    });
+    return { ok: true };
   });
 
 export const logSearchClick = createServerFn({ method: "POST" })
