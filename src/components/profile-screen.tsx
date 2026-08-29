@@ -65,7 +65,7 @@ export function ProfileScreen({ initialTab }: { initialTab?: ProfileTabId | unde
   };
 
   async function shareProfile() {
-    const url = `${window.location.origin}/readers/${profile?.user_id ?? ""}`;
+    const url = `${window.location.origin}/readers/${profile?.user_id ?? ""}?tab=${tab}`;
     const shareData = {
       title: `${profile?.display_name ?? profile?.username ?? "My"} on Circle`,
       text: "Follow my reading on Circle by MyFlip",
