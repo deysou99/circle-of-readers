@@ -503,6 +503,55 @@ function keyset<T extends { order: (c: string, o: { ascending: boolean }) => T; 
   return q.limit(size + 1);
 }
 
+type PersonRow = {
+  id: string;
+  created_at: string;
+  user_id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+};
+
+type ClubRow = {
+  id: string;
+  created_at: string;
+  name: string;
+  handle: string;
+  description: string | null;
+  category: string | null;
+  avatar_url: string | null;
+  is_private: boolean | null;
+  member_count: number | null;
+  active_book_id: string | null;
+  created_by: string | null;
+};
+
+type PostSearchRow = {
+  id: string;
+  created_at: string;
+  content: string;
+  user_id: string;
+  likes_count: number | null;
+  comments_count: number | null;
+  image_url: string | null;
+  books: { id: string; title: string; author: string; cover_url: string | null } | null;
+  clubs: { id: string; name: string } | null;
+};
+
+type BookRow = {
+  id: string;
+  created_at: string;
+  title: string;
+  author: string;
+  cover_url: string | null;
+  summary: string | null;
+  genre: string | null;
+  pages: number | null;
+  published_year: number | null;
+  rating: number | null;
+};
+
 function nextKey(rows: Array<{ id: string; created_at: string }> | null | undefined): Key {
   const last = (rows ?? [])[(rows ?? []).length - 1];
   return last ? { c: last.created_at, id: last.id } : null;
@@ -531,8 +580,8 @@ export const searchCircle = createServerFn({ method: "GET" })
       "id, created_at, content, user_id, likes_count, comments_count, image_url, books(id, title, author, cover_url), clubs(id, name)";
 
     /* ---- relevance boost: followed readers and joined circles come first ---- */
-    let boostPeople: Array<Record<string, unknown>> = [];
-    let boostClubs: Array<Record<string, unknown>> = [];
+    let boostPeople: PersonRow[] = [];
+    let boostClubs: ClubRow[] = [];
 
     if (firstPage) {
       const [{ data: myFollows }, { data: myClubs }] = await Promise.all([
@@ -553,20 +602,20 @@ export const searchCircle = createServerFn({ method: "GET" })
               ? supabase.from("profiles").select(peopleSelect).in("user_id", followIds).or(`username.ilike.${like},display_name.ilike.${like}`)
               : supabase.from("profiles").select(peopleSelect).in("user_id", followIds)
             ).limit(PAGE_SIZE)
-          : emptyRows<Record<string, unknown>>(),
+          : emptyRows<PersonRow>(),
         clubIds.length
           ? (q
               ? supabase.from("clubs").select("*").in("id", clubIds).or(`name.ilike.${like},category.ilike.${like},description.ilike.${like}`)
               : supabase.from("clubs").select("*").in("id", clubIds)
             ).limit(PAGE_SIZE)
-          : emptyRows<Record<string, unknown>>(),
+          : emptyRows<ClubRow>(),
       ]);
-      boostPeople = (bp ?? []) as Array<Record<string, unknown>>;
-      boostClubs = (bc ?? []) as Array<Record<string, unknown>>;
+      boostPeople = (bp ?? []) as unknown as PersonRow[];
+      boostClubs = (bc ?? []) as unknown as ClubRow[];
     }
 
-    const excludedPeople = firstPage ? boostPeople.map((p) => String(p.user_id)) : cursor.boostedPeople;
-    const excludedClubs = firstPage ? boostClubs.map((c) => String(c.id)) : cursor.boostedClubs;
+    const excludedPeople = firstPage ? boostPeople.map((p) => p.user_id) : cursor.boostedPeople;
+    const excludedClubs = firstPage ? boostClubs.map((c) => c.id) : cursor.boostedClubs;
 
     /* ------------------------- keyset-paginated sections ------------------------ */
     const booksBase = q
@@ -600,39 +649,14 @@ export const searchCircle = createServerFn({ method: "GET" })
       return { rows: list.slice(0, PAGE_SIZE), hasMore: list.length > PAGE_SIZE };
     };
 
-    const booksPage = trim(booksRaw as Array<Record<string, unknown>> | null);
-    const clubsPage = trim(clubsRaw as Array<Record<string, unknown>> | null);
-    const peoplePage = trim(peopleRaw as Array<Record<string, unknown>> | null);
-    const postsPage = trim(postsRaw as Array<Record<string, unknown>> | null);
+    const booksPage = trim(booksRaw as unknown as BookRow[] | null);
+    const clubsPage = trim(clubsRaw as unknown as ClubRow[] | null);
+    const peoplePage = trim(peopleRaw as unknown as PersonRow[] | null);
+    const postsPage = trim(postsRaw as unknown as PostSearchRow[] | null);
 
-    const peopleList = [...boostPeople, ...peoplePage.rows] as Array<{
-      id: string;
-      created_at: string;
-      user_id: string;
-      username: string;
-      display_name: string | null;
-      avatar_url: string | null;
-      bio: string | null;
-    }>;
-    const clubList = [...boostClubs, ...clubsPage.rows] as Array<{
-      id: string;
-      created_at: string;
-      name: string;
-      category: string | null;
-      avatar_url: string | null;
-      member_count: number | null;
-    }>;
-    const postList = postsPage.rows as Array<{
-      id: string;
-      created_at: string;
-      content: string;
-      user_id: string;
-      likes_count: number | null;
-      comments_count: number | null;
-      image_url: string | null;
-      books: { id: string; title: string; author: string; cover_url: string | null } | null;
-      clubs: { id: string; name: string } | null;
-    }>;
+    const peopleList: PersonRow[] = [...boostPeople, ...peoplePage.rows];
+    const clubList: ClubRow[] = [...boostClubs, ...clubsPage.rows];
+    const postList = postsPage.rows;
 
     const authorIds = [...new Set(postList.map((p) => p.user_id))];
     const [{ data: follows }, { data: memberships }, { data: authors }] = await Promise.all([
@@ -659,7 +683,7 @@ export const searchCircle = createServerFn({ method: "GET" })
     const memberSet = new Set((memberships ?? []).map((m) => m.club_id));
     const authorMap = new Map((authors ?? []).map((a) => [a.user_id, a]));
 
-    const books = booksPage.rows as Array<Record<string, unknown> & { id: string; created_at: string }>;
+    const books: BookRow[] = booksPage.rows;
     const clubs = clubList.map((c) => ({ ...c, isMember: memberSet.has(c.id) }));
     const people = peopleList.map((p) => ({ ...p, isFollowing: followingSet.has(p.user_id) }));
     const posts = postList.map((p) => ({ ...p, author: authorMap.get(p.user_id) ?? null }));
@@ -668,10 +692,10 @@ export const searchCircle = createServerFn({ method: "GET" })
     const hasMore = booksPage.hasMore || clubsPage.hasMore || peoplePage.hasMore || postsPage.hasMore;
 
     const nextCursor: SearchCursor = {
-      people: nextKey(peoplePage.rows as Array<{ id: string; created_at: string }>) ?? cursor.people,
-      clubs: nextKey(clubsPage.rows as Array<{ id: string; created_at: string }>) ?? cursor.clubs,
-      books: nextKey(booksPage.rows as Array<{ id: string; created_at: string }>) ?? cursor.books,
-      posts: nextKey(postsPage.rows as Array<{ id: string; created_at: string }>) ?? cursor.posts,
+      people: nextKey(peoplePage.rows) ?? cursor.people,
+      clubs: nextKey(clubsPage.rows) ?? cursor.clubs,
+      books: nextKey(booksPage.rows) ?? cursor.books,
+      posts: nextKey(postsPage.rows) ?? cursor.posts,
       boostedPeople: excludedPeople,
       boostedClubs: excludedClubs,
       page: cursor.page + 1,
