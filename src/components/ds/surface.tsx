@@ -40,7 +40,14 @@ export const Surface = React.forwardRef<HTMLDivElement, SurfaceProps>(function S
   { className, variant, radius, padding, as: Tag = "div", ...props },
   ref,
 ) {
-  return <Tag ref={ref as never} className={cn(surfaceVariants({ variant, radius, padding }), className)} {...props} />;
+  const Component = Tag as React.ElementType;
+  return (
+    <Component
+      ref={ref as React.Ref<HTMLElement>}
+      className={cn(surfaceVariants({ variant, radius, padding }), className)}
+      {...props}
+    />
+  );
 });
 
 export function CardHeader({
