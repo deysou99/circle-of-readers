@@ -2,7 +2,7 @@
   "meta": {
     "name": "Circle: Your Reading Community",
     "package": "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "framework": "react",
     "css_framework": "tailwind",
     "starter_template": "custom_design_system_tailwind",
@@ -11,7 +11,7 @@
     ],
     "source_type": "local",
     "source_manifest": {
-      "#enrichment": "79ecf7d34859ea975eeea533ec6884e3b4f91e35de4c3530360fdfcbba54773b",
+      "#enrichment": "928e88462aa7b6cbcfe35a7dab0b863ec3f0dc6c42c52bb9cc469503a8cc1b97",
       ".gitignore": "6d9e901a692b46a83707c245fb03bc91",
       ".lovable/meta.yaml": "954a981e8847ec1692669dbb04ae9ae9",
       ".lovable/plan/circle-by-myflip-first-build-2026-08-27.md": "8eb2dc097364dbec710298850e41e557",
@@ -62,8 +62,10 @@
       "src/components/ds/charts.tsx": "a7db4fcb4bc1a83e023a95535083e691",
       "src/components/ds/feedback.tsx": "624dbfd5d506deb4dd361fe5f222fd66",
       "src/components/ds/field.tsx": "29ee1016574a6f5f038f83dd770002ea",
+      "src/components/ds/index.ts": "33e4604cd5740a3c7951f822e82f71b0",
       "src/components/ds/navigation.tsx": "8187be03688bb568f9c0a9d7d35c7e71",
-      "src/components/ds/surface.tsx": "4732d4255001d28da6db914414edb548",
+      "src/components/ds/overlay.tsx": "ce29e6db7f6c2bc07de8cdf862d32ac0",
+      "src/components/ds/surface.tsx": "5c5967582d306483da4d2be916a28a09",
       "src/components/email-auth-screen.tsx": "41d70034570649e0cee46c439167940d",
       "src/components/goodreads-panel.tsx": "973636a8d2e8c3fdce8d569e1e26ac4e",
       "src/components/home-screen.tsx": "6048fe86c7d9fcb5b60f73e62e9b814e",
@@ -177,7 +179,7 @@
       "src/lib/use-onboarding-tracker.ts": "76239c0ac959d7bc9fce26d1886dd03c",
       "src/lib/use-push-alerts.ts": "435a8468784ae8e6311b78e684fb075d",
       "src/lib/utils.ts": "d9837f38cc05303254571985e3164050",
-      "src/routeTree.gen.ts": "76bacd095b336e0b157fcb6ae6abdc33",
+      "src/routeTree.gen.ts": "45a62e8393f0557888fa523bf4b322f2",
       "src/router.tsx": "8f905e713b0eba7fa8148b7995a708c9",
       "src/routes/README.md": "b3a2f259b66fd1a11f54b6d5ac83bf57",
       "src/routes/__root.tsx": "ed49c70783f28aa1a01942a4c6339bda",
@@ -212,6 +214,7 @@
       "src/routes/auth.email.tsx": "a3505bbab56fe603c209f29437f5199e",
       "src/routes/auth.index.tsx": "5e77ef64adb67bb7f6f438e130bdb976",
       "src/routes/auth.tsx": "0ff926b24523e2d4dd706d2c4d47930f",
+      "src/routes/design-system.tsx": "2ae870eb064189784ac87430111b9c99",
       "src/routes/goodreads.callback.tsx": "7f32ef2ec21a14bbe61b1bf42cad1f7a",
       "src/routes/index.tsx": "5d07db152dc0a2920eba277aa2593af2",
       "src/routes/reset-password.tsx": "2ea1cd03f77e4718ed7c97049f03a94e",
@@ -1127,106 +1130,98 @@
       "import_path": ""
     },
     {
-      "name": "Tabs",
-      "file": "src/components/ds/navigation",
-      "import_path": ""
-    },
-    {
-      "name": "SegmentedControl",
-      "file": "src/components/ds/navigation",
-      "import_path": ""
-    },
-    {
-      "name": "Breadcrumbs",
-      "file": "src/components/ds/navigation",
-      "import_path": ""
-    },
-    {
-      "name": "SideNav",
-      "file": "src/components/ds/navigation",
-      "import_path": ""
-    },
-    {
-      "name": "Pagination",
-      "file": "src/components/ds/navigation",
-      "import_path": ""
-    },
-    {
       "name": "Surface",
-      "file": "src/components/ds/surface",
-      "import_path": "",
-      "props": [
-        {
-          "name": "variant",
-          "type": "enum",
-          "values": [
-            "standard",
-            "elevated",
-            "sunken",
-            "interactive",
-            "highlight",
-            "gradient",
-            "outline"
-          ],
-          "default": "standard"
-        },
-        {
-          "name": "radius",
-          "type": "enum",
-          "values": [
-            "s",
-            "m",
-            "l",
-            "xl"
-          ],
-          "default": "l"
-        },
-        {
-          "name": "padding",
-          "type": "enum",
-          "values": [
-            "none",
-            "sm",
-            "md",
-            "lg"
-          ],
-          "default": "md"
-        },
-        {
-          "name": "as",
-          "type": "enum",
-          "values": [
-            "div",
-            "section",
-            "article",
-            "li"
-          ]
-        }
-      ]
+      "file": "src/components/ds/index",
+      "import_path": ""
     },
     {
       "name": "CardHeader",
-      "file": "src/components/ds/surface",
+      "file": "src/components/ds/index",
       "import_path": ""
     },
     {
       "name": "SectionHeading",
-      "file": "src/components/ds/surface",
+      "file": "src/components/ds/index",
       "import_path": ""
     },
     {
       "name": "MetricCard",
-      "file": "src/components/ds/surface",
+      "file": "src/components/ds/index",
       "import_path": ""
     },
     {
       "name": "GradientHighlightCard",
-      "file": "src/components/ds/surface",
+      "file": "src/components/ds/index",
       "import_path": ""
     },
     {
       "name": "EmptyState",
-      "file": "src/components/ds/surface",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "Tabs",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "SegmentedControl",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "Breadcrumbs",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "SideNav",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "Pagination",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "Modal",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "ModalClose",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "ConfirmDialog",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "Drawer",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "Popover",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenu",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "ContextMenu",
+      "file": "src/components/ds/index",
+      "import_path": ""
+    },
+    {
+      "name": "Tooltip",
+      "file": "src/components/ds/index",
       "import_path": ""
     },
     {

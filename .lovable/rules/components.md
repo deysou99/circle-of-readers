@@ -283,10 +283,22 @@ import { ClubEvents } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f6
 import { ClubsScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
+### ConfirmDialog
+
+```ts
+import { ConfirmDialog } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
 ### Constants
 
 ```ts
 import { Constants } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### ContextMenu
+
+```ts
+import { ContextMenu } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
 ### ConversationView
@@ -377,6 +389,18 @@ import { DiscoverScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a
 
 ```ts
 import { DonutChart } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Drawer
+
+```ts
+import { Drawer } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### DropdownMenu
+
+```ts
+import { DropdownMenu } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
 ### EmailAuthScreen
@@ -499,6 +523,18 @@ import { MessagesScreen } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a
 import { MetricCard } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
+### Modal
+
+```ts
+import { Modal } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### ModalClose
+
+```ts
+import { ModalClose } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
 ### NotificationPreferencesScreen
 
 ```ts
@@ -548,6 +584,12 @@ import { PhoneVerifyStep } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12
 | `phone` | string | `—` |
 | `onBack` | function | `—` |
 | `onVerified` | function | `—` |
+
+### Popover
+
+```ts
+import { Popover } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
 
 ### PostDetailScreen
 
@@ -795,15 +837,6 @@ import { StatusDot } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67
 import { Surface } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
-**Props:**
-
-| Prop | Type | Default |
-|---|---|---|
-| `variant` | standard · elevated · sunken · interactive · highlight · gradient · outline | `standard` |
-| `radius` | s · m · l · xl | `l` |
-| `padding` | none · sm · md · lg | `md` |
-| `as` | div · section · article · li | `—` |
-
 ### Switch
 
 ```ts
@@ -852,6 +885,12 @@ import { TimelineFilters } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12
 
 ```ts
 import { Toggle } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
+```
+
+### Tooltip
+
+```ts
+import { Tooltip } from "@ws-uoaxwod1u9zgr6kkkubj/332ffe59-bb97-4ffb-a12a-9f67c70570ca"
 ```
 
 ### UserProfileScreen
