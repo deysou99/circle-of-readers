@@ -44,7 +44,7 @@ export interface ModalProps {
 export function Modal({ open, onOpenChange, trigger, title, description, children, footer, size = "md" }: ModalProps) {
   const width = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl" }[size];
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+    <DialogPrimitive.Root {...(open === undefined ? {} : { open })} {...(onOpenChange ? { onOpenChange } : {})}>
       {trigger && <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>}
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className={overlayClass} />
@@ -109,11 +109,11 @@ export function ConfirmDialog({
 }) {
   return (
     <Modal
-      open={open}
-      onOpenChange={onOpenChange}
-      trigger={trigger}
+      {...(open === undefined ? {} : { open })}
+      {...(onOpenChange ? { onOpenChange } : {})}
+      {...(trigger ? { trigger } : {})}
       title={title}
-      description={description}
+      {...(description ? { description } : {})}
       size="sm"
       footer={
         <>
@@ -148,7 +148,7 @@ export function Drawer({ open, onOpenChange, trigger, title, description, childr
     bottom: "inset-x-0 bottom-0 max-h-[85vh] rounded-t-[var(--radius-xl)] data-[state=open]:slide-in-from-bottom",
   }[side];
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+    <DialogPrimitive.Root {...(open === undefined ? {} : { open })} {...(onOpenChange ? { onOpenChange } : {})}>
       {trigger && <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>}
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className={overlayClass} />
@@ -242,8 +242,8 @@ function renderItems(
     <React.Fragment key={item.id}>
       {item.separatorBefore && <Separator className="my-1.5 h-px bg-[var(--border-subtle)]" />}
       <Item
-        disabled={item.disabled}
-        onSelect={item.onSelect}
+        {...(item.disabled === undefined ? {} : { disabled: item.disabled })}
+        {...(item.onSelect ? { onSelect: () => item.onSelect?.() } : {})}
         className={cn(itemClass, item.tone === "destructive" && "text-[var(--error-text)]")}
       >
         {item.icon}
