@@ -50,11 +50,8 @@ export function AuthScreen() {
   return (
     <div className="phone-shell flex min-h-screen flex-col bg-paper px-6 pt-safe-top">
       <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-          </svg>
+        <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-elevated shadow-md shadow-ink/5">
+          <img src="/src/assets/circle-logo-black.png" alt="Circle" className="h-10 w-10 object-contain" />
         </div>
         <h1 className="text-3xl font-semibold text-ink" style={{ fontFamily: "var(--font-heading)" }}>
           Circle
