@@ -13,11 +13,8 @@ export function SplashScreen() {
 
   return (
     <div className="phone-shell flex min-h-screen flex-col items-center justify-center bg-paper px-6 text-center">
-      <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-        </svg>
+      <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-surface-elevated shadow-lg shadow-ink/5">
+        <img src="/src/assets/circle-logo-black.png" alt="Circle" className="h-12 w-12 object-contain" />
       </div>
       <h1 className="text-3xl font-semibold tracking-tight text-ink" style={{ fontFamily: "var(--font-heading)" }}>
         Circle

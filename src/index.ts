@@ -1,3 +1,7 @@
+import "./styles.css";
+
+export * from "./components/ds";
+
 export { AdminOtpScreen } from "./components/admin-otp-screen"
 export { AdminSecurityScreen } from "./components/admin-security-screen"
 export { AppErrorBoundary } from "./components/app-error-boundary"
@@ -45,10 +49,8 @@ export { SplashScreen } from "./components/splash-screen"
 export { TimelineFilters } from "./components/timeline-filters"
 export { AlertDialog, AlertDialogPortal, AlertDialogOverlay, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from "./components/ui/alert-dialog"
 export { Avatar, AvatarImage, AvatarFallback } from "./components/ui/avatar"
-export { Button } from "./components/ui/button"
 export { Dialog, DialogPortal, DialogOverlay, DialogTrigger, DialogClose, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "./components/ui/dialog"
 export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "./components/ui/input-otp"
-export { Input } from "./components/ui/input"
 export { Label } from "./components/ui/label"
 export { Progress } from "./components/ui/progress"
 export { Sheet, SheetPortal, SheetOverlay, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription } from "./components/ui/sheet"
